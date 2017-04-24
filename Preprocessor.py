@@ -65,7 +65,7 @@ class chi2:
     '''reads in the chi2, has functionality for evaluation of model'''
     def __init__(self, functions, params, split=6.0/8):
         self.verbose = False #just for some printing
-        chi2_file ='/13TeV_chi2_disjoint'
+        chi2_file ='/13TeV_chi2_disjoint_2'
         path = os.environ['HOME'] + chi2_file
         self.functions = functions
         self.params = params

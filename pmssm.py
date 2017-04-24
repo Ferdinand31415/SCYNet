@@ -1,22 +1,15 @@
-#from data import master, hard_cut, tanh_cut, square_cut
-
 import numpy as np
 from numpy.random import RandomState
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
-#from keras.layers.advanced_activations import SReLU
-#srel = SReLU(t_left_init='zero', a_left_init='glorot_uniform', t_right_init='glorot_uniform', a_right_init='one')
 from keras.regularizers import l2
 from keras.optimizers import SGD, Adam, Nadam, Adagrad
 #from keras.layers.normalization import BatchNormalization
-from keras.callbacks import History, ModelCheckpoint, EarlyStopping
+from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
 
 from copy import deepcopy
 path ='13TeV_chi2_disjoint_2'
-#d = tanh_cut(path, s=75, e=100)
-#d= hard_cut(path, preproc ='dm')
-#d = square_cut(path, cut=100, delta=25,split = 3.0/4, preproc = 'smds')
 
 from Preprocessor import pmssm, chi2, shuffle_data
 split = 9.0/10
@@ -25,19 +18,18 @@ y = chi2(['square_cut','div_max'], [100,25], split= split)
 #shuffle_data(x, y)
 
 model = Sequential()
-n, act = 600, 'relu'
+n, act = 200, 'relu'
 model.add(Dense(n, init='glorot_uniform',
 #		init='zero',
 		activation=act,
 		input_dim=x.train.shape[1]))
-for i in range(4):
+for i in range(2):
     model.add(Dense(n-0*i, init='glorot_uniform',activation=act))#, W_regularizer=l2(0.001)))
-    model.add(Dropout(0.1))
+    model.add(Dropout(0.05))
 model.add(Dense(1, init='glorot_uniform',activation=act))
 
 
 import keras.backend as K
-
 def mean_loss_chi2(y_true, y_pred):
     return 100*K.mean(K.abs(y_pred-y_true))
 
@@ -57,10 +49,15 @@ def trainnadam(lr=1e-1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=
 early_stopping = EarlyStopping(monitor='val_loss', patience=50)
 
 #Save the model if new val_los minimum
-modcp = ModelCheckpoint("best_net_r_chi2.hdf5", monitor='val_loss', verbose=0, save_best_only=True, mode='auto')
+modcp = ModelCheckpoint("best_net_r_chi2.hdf5", monitor='val_loss', save_best_only=True, mode='auto',verbose=True)
 
 #History allows to look at stuff like Loss and Val_Loss later
 history = History()
+
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=10**(-5.1))
+nadam = Nadam(lr=10**(-3), beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
+model.compile(loss = 'mse', optimizer = nadam, metrics=[mean_loss_chi2])
+model.fit(x.train,y.train, validation_data =(x.test, y.test), epochs = n,batch_size=500, callbacks = [modcp, reduce_lr])
 
 
 #trainsgd(l=10**(-2.2),mom=0.2,n=10)
