@@ -25,7 +25,7 @@ model.add(Dense(n, init='glorot_uniform',
 		input_dim=x.train.shape[1]))
 for i in range(2):
     model.add(Dense(n-0*i, init='glorot_uniform',activation=act))#, W_regularizer=l2(0.001)))
-    model.add(Dropout(0.05))
+    model.add(Dropout(0.08))
 model.add(Dense(1, init='glorot_uniform',activation=act))
 
 
