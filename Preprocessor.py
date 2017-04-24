@@ -11,7 +11,7 @@ def shuffle_data(x, y):
 class pmssm:
     def __init__(self, preproc, split, use_only=range(11)):
         #put chi2 file on home folder, so code will be useable on baf, desktop, aachen
-        chi2_file ='/13TeV_chi2_disjoint'
+        chi2_file ='/13TeV_chi2_disjoint_2'
         path = os.environ['HOME'] + chi2_file
         self.use_only = use_only
         self.x = np.genfromtxt(path)[:,1:12] #cut array_id, dont load chi2   
