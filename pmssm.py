@@ -25,14 +25,14 @@ y = chi2(['square_cut','div_max'], [100,25], split= split)
 #shuffle_data(x, y)
 
 model = Sequential()
-n, act = 600, 'relu'
+n, act = 500, 'relu'
 model.add(Dense(n, init='glorot_uniform',
 #		init='zero',
 		activation=act,
 		input_dim=x.train.shape[1]))
 for i in range(4):
     model.add(Dense(n-0*i, init='glorot_uniform',activation=act))#, W_regularizer=l2(0.001)))
-    model.add(Dropout(0.1))
+    model.add(Dropout(0.08))
 model.add(Dense(1, init='glorot_uniform',activation=act))
 
 
