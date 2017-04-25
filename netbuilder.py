@@ -2,7 +2,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD, Adam, Nadam, Adagrad
 
-def build_sequential(hp):
+def build_Sequential(hp):
     model = Sequential()
     
     #input layer
@@ -21,5 +21,5 @@ def build_sequential(hp):
     model.add(Dense(1, init=hp['init'], activation=hp['activation'][1]))
     return model
 
-
+def
 

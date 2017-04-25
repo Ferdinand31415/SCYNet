@@ -9,16 +9,20 @@ from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnP
 
 
 from copy import deepcopy
-path ='13TeV_chi2_disjoint_2'
 
-from Preprocessor import pmssm, chi2, shuffle_data
+from Preprocessor import pmssm, chi2, shuffle_data, fulldata
+
+data = fulldata()
+
 split = 9.0/10
-x = pmssm(preproc = ['log_norm','min_max'], split = split)
-y = chi2(['square_cut','div_max'], [100,25], split= split)
-shuffle_data(x, y)
+use_only = range(11)
+
+data.shuffle()
+x = pmssm(data.data[:,:-1], preproc = ['log_norm','min_max'], split = split)
+y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25], split= split)
 
 model = Sequential()
-n, act = 300, 'relu'
+n, act = 100, 'relu'
 model.add(Dense(n, init='glorot_uniform',
 #		init='zero',
 		activation=act,
@@ -46,10 +50,10 @@ def trainnadam(lr=1e-1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=
 	y.evaluation(x,model)
 
 #Define Early Stopping(If val_loss doeasn't decrease in 50 epochs stop)
-early_stopping = EarlyStopping(monitor='val_loss', patience=20, mode='min', verbose=1)
+early_stopping = EarlyStopping(monitor='val_loss', patience=3, mode='min', verbose=1)
 
 #Save the model if new val_los minimum
-modcp = ModelCheckpoint("best_net_r_chi2.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
 #History allows to look at stuff like Loss and Val_Loss later
 history = History()
@@ -57,9 +61,9 @@ history = History()
 #Main Lerning Loop. Start with standard Learning rate, then train still val_loss stops decreasing. Then decrease learning rate and train again.
 '''
 learnrate=10**(-3.0)
-while learnrate > 10**(-5.1):
+while learnrate > 10**(-4.1):
 	opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
-	model.compile(loss='mse', optimizer=opt, metrics=[mean_loss_chi2])
+	model.compile(loss='mse', optimizer=opt, metrics=[mean_error_chi2])
 	model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
 	model.load_weights('best_net_r_chi2.hdf5')
 	learnrate /= 5
@@ -67,14 +71,14 @@ while learnrate > 10**(-5.1):
 '''
 
 
-'''
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=10**(-5.1))
+#'''
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=10**(-4.1), verbose=1)
 nadam = Nadam(lr=10**(-3), beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
-model.compile(loss = 'mse', optimizer = nadam, metrics=[mean_loss_chi2, 'accuracy'])
-model.fit(x.train,y.train, validation_data =(x.test, y.test), epochs = n,batch_size=500, callbacks = [reduce_lr])
+model.compile(loss = 'mae', optimizer = nadam, metrics=[mean_error_chi2])
+model.fit(x.train,y.train, validation_data =(x.test, y.test), epochs = n,batch_size=1000, callbacks = [reduce_lr, modcp, history])
 y.evaluation(x, model)
-'''
+#'''
 
 
 #trainsgd(l=10**(-2.2),mom=0.2,n=10)
-trainnadam(lr=10**(-4),n=30,schedule_decay=1e-2)
+#trainnadam(lr=10**(-3.5),n=5,schedule_decay=1e-2)

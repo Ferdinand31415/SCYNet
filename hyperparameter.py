@@ -9,7 +9,7 @@ except:
     import pickle
 
 
-class Hyperparameter():
+class hyperparameter():
     
     def __init__(self):
         self.paramfile = 'paramfile.pkl'

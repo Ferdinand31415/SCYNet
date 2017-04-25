@@ -8,14 +8,20 @@ def shuffle_data(x, y):
     y.train_test_init_sq() #so we compare prediction with correct ytrain,test
     x.split_train_data() #new train split
     y.split_train_data() #new test split
+
+class fulldata:
+    def __init__(self, path = os.environ['HOME'] + '/13TeV_chi2_disjoint_2'):
+        self.path = path
+        self.data = np.genfromtxt(self.path)[:,1:]
+        #print 'loaded pmssm11 data with shape', self.data.shape   
+        
+    def shuffle(self):
+        np.random.shuffle(self.data)
     
 class pmssm:
-    def __init__(self, preproc, split, use_only=range(11)):
-        #put chi2 file on home folder, so code will be useable on baf, desktop, aachen
-        chi2_file ='/13TeV_chi2_disjoint_2'
-        path = os.environ['HOME'] + chi2_file
+    def __init__(self, data, preproc, split, use_only=range(11)):
         self.use_only = use_only
-        self.x = np.genfromtxt(path)[:,1:12] #cut array_id, dont load chi2   
+        self.x = data   
         self.split = int(split*len(self.x))
         self.preproc = preproc
         self.preprocess() 
@@ -64,13 +70,11 @@ class pmssm:
 
 class chi2:
     '''reads in the chi2, has functionality for evaluation of model'''
-    def __init__(self, functions, params, split=6.0/8):
+    def __init__(self, data, preproc, params, split=6.0/8):
         self.verbose = False #just for some printing
-        chi2_file ='/13TeV_chi2_disjoint_2'
-        path = os.environ['HOME'] + chi2_file
-        self.functions = functions
+        self.preproc = preproc
         self.params = params
-        self.chi2 = np.genfromtxt(path)[:,-1]
+        self.chi2 = data
         self.split = int(split*len(self.chi2))
         self.start = deepcopy(self.chi2[:50])
         self.back = [] #save the backtransformations here
@@ -141,7 +145,7 @@ class chi2:
     def preprocess(self):
         if True: #if I implement tanh cut, change this#TODO
             self.train_test_init_sq()
-        for p in self.functions:
+        for p in self.preproc:
             prefunc = getattr(self, p)
             prefunc()
         self.split_train_data()   
