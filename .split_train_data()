@@ -5,9 +5,8 @@ from copy import deepcopy
 from sklearn.utils import shuffle
 def shuffle_data(x, y):
     x.x, y.chi2 = shuffle(x.x, y.chi2) #option: random_state=0 controlling seed
-    y.train_test_init_sq() #so we compare prediction with correct ytrain,test
-    x.split_train_data() #new train split
-    y.split_train_data() #new test split
+    x.split_train_data()
+    y.split_train_data()
     
 class pmssm:
     def __init__(self, preproc, split, use_only=range(11)):
@@ -129,18 +128,17 @@ class chi2:
         y[y>cut] = cut
         return y
 
-    
-    def train_test_init_sq(self):
-        #only works for square cut! #if tanh, add another!#TODO
-        self.cut = self.params[0]
-        self.train_init = deepcopy(self.chi2)[:self.split].flatten()
-        self.train_init[self.train_init > self.cut] = self.cut
-        self.test_init= deepcopy(self.chi2)[self.split:].flatten()
-        self.test_init[self.test_init > self.cut] = self.cut
-
+ 
     def preprocess(self):
         if True: #if I implement tanh cut, change this#TODO
-            self.train_test_init_sq()
+            #compare this later with prediction from net
+            self.cut = self.params[0]
+            self.train_init = deepcopy(self.chi2)[:self.split].flatten()
+            self.train_init[self.train_init > self.cut] = self.cut
+    
+            self.test_init= deepcopy(self.chi2)[self.split:].flatten()
+            self.test_init[self.test_init > self.cut] = self.cut
+
         for p in self.functions:
             prefunc = getattr(self, p)
             prefunc()
