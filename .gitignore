@@ -1,0 +1,6 @@
+*.pyc
+*.json
+*.hd
+*.hd5f
+.*.swp
+.*.swo
