@@ -9,19 +9,36 @@ def build_Sequential(hp):
     model = Sequential()
     
     #input layer
+    '''
     model.add(Dense(hp['layers'][0], init=hp['init'],\
                     activation = hp['activation'][0],
                     input_dim = 11))
+    '''
+    model.add(Dense(hp['layers'][0], input_dim=11,\
+                    kernel_initializer=hp['init']))
+    model.add(Activation(hp['activation'][0]))
 
+   
     #hidden layers
+    '''
     for i in range(1, len(hp['layers'])):
         model.add(Dense(hp['layers'][i],\
                         init=hp['init'],\
                         activation=hp['activation'][1]))
         model.add(Dropout(hp['dropout']))
+    '''
+    
+    for i in range(1, len(hp['layers'])): #skipping first!
+        model.add(Dense(hp['layers'][i],\
+                        kernel_initializer=hp['init']))
+        model.add(Dropout(hp['dropout']))
+        model.add(Activation(hp['activation'][1]))
+
 
     #output layer
-    model.add(Dense(1, init=hp['init'], activation=hp['activation'][2]))
+    #model.add(Dense(1, init=hp['init'], activation=hp['activation'][2]))
+    model.add(Dense(1, kernel_initializer=hp['init']))
+    model.add(Activation(hp['activation'][2]))
     return model
 
 def build_Optimizer(hp):
@@ -30,7 +47,7 @@ def build_Optimizer(hp):
     else:
         raise ValueError('no optimizer was given %s' % hp)
 
-def save_model(model, name='best_ever')
+def save_model(model, name='best_ever'):
     # serialize model to JSON
     model_json = model.to_json()
     with open("%s.json" % name, "w") as json_file:
@@ -39,7 +56,7 @@ def save_model(model, name='best_ever')
     model.save_weights("%s.h5" % name)
     print("Saved model %s to disk" % name)
 
-def load_model(name='best_ever')
+def load_model(name='best_ever'):
     # load json and create model
     json_file = open('%s.json' % name, 'r')
     loaded_model_json = json_file.read()

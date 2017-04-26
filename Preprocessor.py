@@ -166,7 +166,7 @@ class chi2:
 
     def evaluation(self,x,model):
         self.prepare_evaluation(x, model) 
-        ranges = [[0,100.0], [0, 52.5], [52.5, 56.0],\
+        ranges = [[0,100.0], [0, 53.5], [53.5, 56.0],\
                  [56.0, 70.0], [70.0, 95.0], [95.0, 100.0]]
         l=7
         chi2 =  'chi2              '
@@ -178,11 +178,13 @@ class chi2:
                 if self.verbose: print r
                 mask_train = (self.train_init>r[0]) == (self.train_init<=r[1])
                 mask_test = (self.test_init>r[0]) == (self.test_init<=r[1])
-                chi2_mod = '%i-%i' % (r[0], r[1])
+                chi2_mod = '%s-%s' % ('{0:.1f}'.format(r[0]), '{0:.1f}'.format(r[1]))
                 err_train= np.mean(np.abs(self.train_pred[mask_train]-self.train_init[mask_train]))
                 err_test = np.mean(np.abs(self.test_pred[mask_test]-self.test_init[mask_test]))
-                train_mod =str(err_train)[:4]
-                test_mod =str(err_test)[:4]
+                train_mod = "{0:.2f}".format(err_train)
+                test_mod = "{0:.2f}".format(err_test)
+                #train_mod =str(err_train)[:4]
+                #test_mod =str(err_test)[:4]
                 self.mean_errors[chi2_mod] = [err_train,err_test]
                 chi2 += chi2_mod + (l-len(chi2_mod))*' '
                 train += train_mod + (l-len(train_mod))*' '

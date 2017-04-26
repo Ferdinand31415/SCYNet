@@ -14,13 +14,12 @@ class Hyperparameter():
     
     def __init__(self, paramfile='paramfile.pkl', verbose=True):
         self.paramfile = paramfile
-        self.scannedfile = 'alrdyscanned'#why did i create this?
         self.verbose = verbose
         try:
-            self.load()
+            self.load(self.verbose)
             self.create_todo() #creates list self.todo
-        except:
-            print 'no file found'
+        except IOError:
+            print 'no file found!'
             #sys.exit()
             self.init()
             print 'created a new file %s' % self.paramfile
@@ -30,7 +29,7 @@ class Hyperparameter():
     def __str__(self):
         msg  = '\nHyperparameter %s status \n' % self.paramfile
         wait, run, fin = 0, 0 ,0
-        for i in self.p.keys():
+        for i in self.p_keys():
             st = self.p[i]['status']
             if st == 'waiting':
                 wait += 1
@@ -42,10 +41,12 @@ class Hyperparameter():
         msg += '\t waiting : %s\n' % wait
         msg += '\t running : %s\n' % run
         msg += '\t finished : %s\n' % fin
-        msg += '\t total : %s' % len(self.p.keys())
+        msg += '\t total : %s\n' % len(self.p_keys())
+        msg += '\t best mean error : %s ' % self.p['best_global_mean_err']
         
         return msg
-   
+  
+     
     def create_layers(self):
         #create many good layers
         #TODO dont just manually enter all of them
@@ -72,49 +73,65 @@ class Hyperparameter():
         self.p = {}
         for i in range(self.len):
             self.p.update({i:self.param[i]})
-        self.best_global_mean_err = np.inf
+        self.p.update({'best_global_mean_err' : np.inf})
         self.save()
     
     def save(self):
         pickle.dump(self.p,open(self.paramfile,'wb'))
-    def load(self):
-        if self.verbose: print 'loading' , self.paramfile
+    def load(self, verbose=False):
+        if verbose: print 'loading' , self.paramfile
         self.p = pickle.load(open(self.paramfile,'rb'))
+    
+    def p_keys(self):
+        '''returns all ids, accessed via self.p[id]'''
+        return [i for i in self.p.keys() if type(i) == int]
 
     def create_todo(self):
         def create_list(self):
             todo = []
-            for i, p in zip(self.p.keys(), self.p.values()):
-                if p['status'] == 'waiting':
+            for i in self.p_keys():
+                if self.p[i]['status'] == 'waiting':
                     todo.append(i)
             return todo 
-
         while True:
             todo_1 = create_list(self)
             #check times to see if other process wrote to file
-            time.sleep(0.3)
-            self.load()
+            time.sleep(0.2)
+            self.load(verbose=False)
             todo_2 = create_list(self)
             if todo_1 == todo_2:
                 self.todo = todo_1
                 break 
-                
+    
+    '''change status of hp point
+    if status is waiting we want to be able
+    to test this hp point.
+
+    if status is running/finished
+    we do not want to touch it!
+    '''
     def running(self, id):
         self.p[id]['status'] = 'running'
         self.save()
-
-    def finished(self, id, mean_errs, model):
+    def waiting(self, id):
+        self.p[id]['status'] = 'waiting'
+        if self.verbose: print '\nATTENTION: hp[%s] set to waiting' % id
+        self.save()
+    def finished(self, id, mean_errs, model=None):
         self.p[id]['status'] = 'finished'
         self.p[id]['meanerrors'] = mean_errs
-        if mean_errs['0-100'] < self.best_global_mean_err:
-            self.best_global_mean_err = mean_errs['0-100']
-            save_model(model, name='best_ever')
+        #mean_errs[range][0 or 1], train or test mean errors
+        if mean_errs['0.0-100.0'][1] < self.p['best_global_mean_err']:
+            print 'in finished'
+            print self.p[id]['meanerrors'], mean_errs
+            print mean_errs['0.0-100.0'], self.p['best_global_mean_err']
+ 
+            self.p['best_global_mean_err'] = mean_errs['0.0-100.0']
+            if model != None:
+                save_model(model, name='best_ever')
+            if self.verbose: print '\n\t!!!new best model!!! %s\n' % mean_errs
         self.save()
     
-    def set_mean_errs(mean_errs):
-        #self. = self.set_mean_errs(mean_errs)
-        pass
-
     def print_me(self):
         print '\n complete status'
         print self
@@ -123,11 +140,11 @@ class Hyperparameter():
             print self.p[i]
 
     def print_par(self, id):
-        print 'hyperparameter[%s]\n' % id
+        print '\nhyperparameter[%s]\n' % id
         for a, b in zip(self.p[id].keys(), self.p[id].values()):
-            print '%s \t%s' %  (a, b)
+            print '\t%s \t%s' %  (a, b)
         print '\n'
 #test
 #h = Hyperparameter()
-#mean_errs = {'0-100':1.5, '0-50':2.0, '50-100':3.0}
+#mean_errs = {'0.0-100':1.5, '0-50':2.0, '50-100':3.0}
 
