@@ -65,6 +65,7 @@ class Hyperparameter():
         self.params['dropout'] = [0.01, 0.05, 0.1, 0.2, 0.4]
         self.params['meanerrors'] = ['tbd']
         self.params['init'] = ['glorot_uniform']
+        self.params['batch'] = [500,1250]
         varNames = sorted(self.params)
         self.param = [dict(zip(varNames, prod)) for prod in it.product(*(self.params[varName] for varName in varNames))]
         from random import shuffle
@@ -144,6 +145,17 @@ class Hyperparameter():
         for a, b in zip(self.p[id].keys(), self.p[id].values()):
             print '\t%s \t%s' %  (a, b)
         print '\n'
+
+class Hp()
+    def __init__(self, ):
+        self.stage = stage
+        getattr(self, self.stage)()
+        sef.lr_priors = 
+
+    def one(self):
+        '''priors over the hp'''
+        self['lr
+        
 #test
 #h = Hyperparameter()
 #mean_errs = {'0.0-100':1.5, '0-50':2.0, '50-100':3.0}

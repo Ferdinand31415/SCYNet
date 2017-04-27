@@ -16,9 +16,21 @@ from hyperparameter import Hyperparameter
 from Preprocessor import pmssm, chi2, fulldata
 data = fulldata()
 
-#some configuration for use of data
+#some configuration
 split = 0.8
 patience = 2
+starting_lr = 10**(-2.2)
+
+
+def smart_start(x, y, model, batch):
+    try_out = np.logspace(-1.5,-3.5,10)
+    histos = []
+    history = History()
+    for lr in try_out:
+        K.set_value(model.optimizer.lr, lr)
+        model.fit(x.train, y.train, validation_data=(x.test,y.test),\
+            epochs=3, batch_size=batch, verbose=1,\
+            callbacks=[history,early_stopping,modcp])
 
 def almost_no_improvement(histos):
     '''returns true if almost no improvement at all even though
@@ -60,32 +72,41 @@ h = Hyperparameter(paramfile=paramfile)
 
 #main hyperloop
 for id in range(start_idx, end_idx + 1):
+    #check if hp is busy or finished, potentially skip
     if h.p[id]['status'] != 'waiting':
-        #if we are here, hp is running or finished
         print 'hp[%s] is %s, skip' % (id, h.p[id]['status'])
         continue
     
-    h.running(id) #signal to all other possible jobs that this id is training now.
-    print h
-    #h.print_me()
-    h.print_par(id)
+    #signal to all other possible jobs that this id is training now.
+    h.running(id)
+
+    #print out some information
+    print h #general 
+    h.print_par(id) #specific to the hp
+
+    #build model according to hp
     model = build_Sequential(h.p[id])
-    opt = build_Optimizer(h.p[id])
-    
-    #shufffle data, so we dont learn hyperparameters for a certain validation set
+    opt = build_Optimizer(h.p[id], starting_lr)
+    model.compile(loss='mae', optimizer=opt, metrics=[mean_loss_chi2])
+
+    #shuffle data, so we dont learn hyperparameters for a certain validation set
     data.shuffle()
-    x = pmssm(data.data[:,:-1], preproc = ['log_norm','min_max'], split = split)
+    x = pmssm(data.data[:,:-1], preproc = ['sub_mean_div_std','min_max'], split = split)
     y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25], split= split)
+
+    #find starting learing rate. Not too high(instable + nonconverging)
+    #or too low (too slow learning)
+    lr = smart_start(x, y, model, batch)
 
     try:
         lr=10**(-3.0)
         while lr > 10**(-5.1):
             history = History()
-            model.compile(loss='mae', optimizer=opt, metrics=[mean_loss_chi2])
-            model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
+            model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=h.p[i]['batch'], verbose=1, callbacks=[history,early_stopping,modcp])
             model.load_weights('bestnet.hdf5')
             lr /= 10.0
-            print 'lr:', lr
+            K.set_value(model.optimizer.lr, lr)
+            print '\n\nNEW LEARNING RATE:', lr, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
             histos.append(history)
             if almost_no_improvement(histos):       
                 break
