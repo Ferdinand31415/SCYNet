@@ -41,11 +41,11 @@ def build_Sequential(hp):
     model.add(Activation(hp['activation'][2]))
     return model
 
-def build_Optimizer(hp):
+def build_Optimizer(hp, starting_lr):
     if hp['optimizer'] == 'nadam':
-        return Nadam(lr=10**(-3), beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
+        return Nadam(lr=starting_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
     else:
-        raise ValueError('no optimizer was given %s' % hp)
+        raise ValueError('no optimizer was given inside %s' % hp)
 
 def save_model(model, name='best_ever'):
     # serialize model to JSON
