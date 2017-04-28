@@ -45,9 +45,9 @@ model.add(Dense(n, kernel_initializer='glorot_uniform',
 #		kernel_initializer='zero',
 		activation=act,
 		input_dim=x.train.shape[1]))
-for i in range(3):
+for i in range(4):
     model.add(Dense(n-0*i, kernel_initializer='glorot_uniform',activation=act))#, W_regularizer=l2(0.001)))
-    model.add(Dropout(0.05))
+    model.add(Dropout(0.08))
 model.add(Dense(1, kernel_initializer='glorot_uniform',activation=act))
 
 
@@ -56,7 +56,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=18, mode='min', verb
 modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 history = History()
 
-learnrate=10**(-2.8)
+learnrate=10**(-3.2)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
 while learnrate > 10**(-7.1):

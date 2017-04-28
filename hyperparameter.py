@@ -147,11 +147,11 @@ class Hyperparameter():
         print '\n'
 
 from random import uniform, randint
-class RandomHyperPar()
+class RandomHyperPar():
     def __init__(self):
-        self.lr= 10**(-uniform(1,6))
+        self.lr = 10**(-uniform(2,5))
         self.dropout = uniform(0.01,0.4)
-        self.batch = uniform(300,1500)
+        self.batch = randint(300,1500)
         self.layers = randint(3,7)
         self.neurons = randint(300,1000)
     
@@ -159,16 +159,16 @@ class RandomHyperPar()
         #of preprocessing for the pmssm
         prob = randint(1,2)
         if prob == 1:
-            self.preproc_pmssm = 'log_norm'
+            self.pp_pmssm = 'log_norm'
         elif prob == 2:
-            self.preproc_pmssm = 'sub_mean_div_std'
+            self.pp_pmssm = 'sub_mean_div_std'
 
         #same for chi2 data
         prob = randint(1,2)
         if prob == 1:
-            self.preproc_chi2 = 'div_max'
+            self.pp_chi2 = 'div_max'
         elif prob == 2:
-            self.preproc_chi2 = 'sub_mean_div_std'
+            self.pp_chi2 = 'sub_mean_div_std'
 
         #same for optimizer
         prob = randint(1,2)
@@ -176,7 +176,23 @@ class RandomHyperPar()
             self.opt= 'sgd'
         elif prob == 2:
             self.opt= 'adam'
- 
+
+    def __str__(self):
+        s = '\nhyperparameter:'
+        hp = self.__dict__
+        for value, key in zip(hp.values(), hp.keys()):
+            s += '\n\t' + str(key) + '\t' + str(value)
+        return s
+
+    def to_file(self):
+        s = ''
+        hp = self.__dict__
+        for value, key in zip(hp.values(), hp.keys()):
+            s += str(key) + ' ' + str(value) + ' '
+        return s
+
+    def dict(self):
+        return self.__dict__
 #test
 #h = Hyperparameter()
 #mean_errs = {'0.0-100':1.5, '0-50':2.0, '50-100':3.0}
