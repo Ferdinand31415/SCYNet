@@ -6,7 +6,7 @@ from keras.regularizers import l2
 from keras.optimizers import SGD, Adam, Nadam, Adagrad
 #from keras.layers.normalization import BatchNormalization
 from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-
+import sys
 import keras.backend as K
 '''
 def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
@@ -45,7 +45,7 @@ model.add(Dense(n, kernel_initializer='glorot_uniform',
 #		kernel_initializer='zero',
 		activation=act,
 		input_dim=x.train.shape[1]))
-for i in range(4):
+for i in range(2):
     model.add(Dense(n-0*i, kernel_initializer='glorot_uniform',activation=act))#, W_regularizer=l2(0.001)))
     model.add(Dropout(0.08))
 model.add(Dense(1, kernel_initializer='glorot_uniform',activation=act))
@@ -53,15 +53,17 @@ model.add(Dense(1, kernel_initializer='glorot_uniform',activation=act))
 
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=18, mode='min', verbose=1)
+from misc import troll
+early_stopping = troll(patience=4) 
 modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 history = History()
 
-learnrate=10**(-3.2)
+learnrate=10**(12)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
 while learnrate > 10**(-7.1):
         K.set_value(model.optimizer.lr, learnrate)
-	model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
+	model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
 	model.load_weights('bestnet.hdf5')
 	learnrate /= 4
 	print 'learnrate:', learnrate
@@ -77,7 +79,6 @@ model.compile(loss = 'mae', optimizer = opt, metrics=[mean_error_chi2])
 model.fit(x.train,y.train, validation_data =(x.test, y.test), epochs = n,batch_size=1000, callbacks = [reduce_lr, modcp, history])
 y.evaluation(x, model)
 
-import sys
 
 x_train, x_test, y_train, y_test = only_small_chi2()
 #sys.exit()

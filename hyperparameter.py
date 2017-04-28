@@ -149,33 +149,50 @@ class Hyperparameter():
 from random import uniform, randint
 class RandomHyperPar():
     def __init__(self):
-        self.lr = 10**(-uniform(2,5))
-        self.dropout = uniform(0.01,0.4)
+        self.lr = 10**(-uniform(2,4))
+        self.dropout = 10**(-uniform(2.0,0.45))
         self.batch = randint(300,1500)
         self.layers = randint(3,7)
         self.neurons = randint(300,1000)
-    
+   
+        prob = [randint(0,1) for p in range(10)] 
         #probability for choosing different types
         #of preprocessing for the pmssm
-        prob = randint(1,2)
-        if prob == 1:
-            self.pp_pmssm = 'log_norm'
-        elif prob == 2:
-            self.pp_pmssm = 'sub_mean_div_std'
+
+        if prob[0] == 0:
+            self.pp_pmssm = ['log_norm']
+        else:
+            self.pp_pmssm = ['sub_mean_div_std']
+        if prob[5] == 1:
+            self.pp_pmssm += ['min_max']
+        else:
+            self.pp_pmssm += ['div_max']
+            
 
         #same for chi2 data
-        prob = randint(1,2)
-        if prob == 1:
-            self.pp_chi2 = 'div_max'
-        elif prob == 2:
-            self.pp_chi2 = 'sub_mean_div_std'
+        if prob[1] == 0:
+            self.pp_chi2 = ['square_cut','div_max']
+        else:
+            self.pp_chi2 = ['square_cut','sub_mean_div_std']
 
         #same for optimizer
-        prob = randint(1,2)
-        if prob ==1:
+        if prob[2] == 0:
             self.opt= 'sgd'
-        elif prob == 2:
+        else:    
             self.opt= 'adam'
+
+        #kernel initializer
+        if prob[3] == 0:
+            self.init = 'glorot_uniform'
+        else:
+            self.init = 'normal'
+
+        #activation function
+        #tanh never works... atm only RELU
+        if prob[4] == 0:
+            self.act = 'relu'
+        else:
+            self.act = 'relu'
 
     def __str__(self):
         s = '\nhyperparameter:'
@@ -184,17 +201,19 @@ class RandomHyperPar():
             s += '\n\t' + str(key) + '\t' + str(value)
         return s
 
-    def to_file(self):
+    def string(self):
         s = ''
         hp = self.__dict__
         for value, key in zip(hp.values(), hp.keys()):
-            s += str(key) + ' ' + str(value) + ' '
+            s += str(key) + ':' + str(value) + ','
         return s
 
     def dict(self):
         return self.__dict__
+
+
 #test
 #h = Hyperparameter()
 #mean_errs = {'0.0-100':1.5, '0-50':2.0, '50-100':3.0}
 
-h = RandomHyperPar()
+#h = RandomHyperPar()

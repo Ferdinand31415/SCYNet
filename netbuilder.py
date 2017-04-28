@@ -41,11 +41,39 @@ def build_Sequential(hp):
     model.add(Activation(hp['activation'][2]))
     return model
 
+def build_Sequential_RH(hp):
+    model = Sequential()
+    model.add(Dense(hp.neurons, input_dim=11,\
+                    kernel_initializer=hp.init))
+    model.add(Activation(hp.act))
+
+   
+    #hidden layers
+    for i in range(1, len(hp.layers)): #skipping first!
+        model.add(Dense(hp.neurons,\
+                        kernel_initializer=hp.init))
+        model.add(Dropout(hp.dropout))
+        model.add(Activation(hp.act))
+
+
+    #output layer
+    model.add(Dense(1, kernel_initializer=hp.init))
+    model.add(Activation('relu'))
+    return model
+
+
 def build_Optimizer(hp, starting_lr):
     if hp['optimizer'] == 'nadam':
         return Nadam(lr=starting_lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
     else:
         raise ValueError('no optimizer was given inside %s' % hp)
+
+def build_Optimizer_RH(hp):
+    if hp.opt == 'adam':
+        return Nadam(lr=hp.lr, beta_1=0.9, beta_2=0.999, \
+                    epsilon=1e-08, schedule_decay=0)
+    if hp.opt == 'sgd':
+        return SGD(lr=hp.lr, momentum=0.9, decay=0, nesterov=True) 
 
 def save_model(model, name='best_ever'):
     # serialize model to JSON
