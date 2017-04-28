@@ -8,25 +8,7 @@ from keras.optimizers import SGD, Adam, Nadam, Adagrad
 from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 import sys
 import keras.backend as K
-'''
-def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
-    d=np.genfromtxt(path)[:,1:]
-    p=d[:,:-1]
-    chi2 = d[:,-1]
-    mask = chi2 < 100
-    p=p[mask]
-    chi2 =chi2[mask]
-    chi2 = chi2/100
-    for i in range(p.shape[1]):
-        mean,std=p[:,i].mean(), p[:,i].std()
-        p[:,i] = (p[:,i] - mean)/std
-    split = int(len(chi2)*split)
-    x_train = p[:split]
-    y_train = chi2[:split]
-    x_test = p[split:]
-    y_test = chi2[split:]
-    return x_train, x_test, y_train, y_test
-'''
+
 from copy import deepcopy
 from Preprocessor import pmssm, chi2, shuffle_data, fulldata
 
@@ -69,25 +51,4 @@ while learnrate > 10**(-7.1):
 	print 'learnrate:', learnrate
 
 y.evaluation(x, model)
-'''
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.66, patience=13, min_lr=10**(-6.0), verbose=1)
 
-opt = Nadam(lr=10**(-2.8), beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
-#opt = SGD(lr=10**(-2.55555), momentum=0.9, decay=0)
-
-model.compile(loss = 'mae', optimizer = opt, metrics=[mean_error_chi2])
-model.fit(x.train,y.train, validation_data =(x.test, y.test), epochs = n,batch_size=1000, callbacks = [reduce_lr, modcp, history])
-y.evaluation(x, model)
-
-
-x_train, x_test, y_train, y_test = only_small_chi2()
-#sys.exit()
-learnrate=10**(-2.8)
-while learnrate > 10**(-7.1):
-	opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
-	model.compile(loss='mae', optimizer=opt, metrics=[mean_error_chi2])
-	model.fit(x_train, y_train, validation_data=(x_test,y_test), epochs=400, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
-	model.load_weights('bestnet.hdf5')
-	learnrate /= 4
-	print 'learnrate:', learnrate
-'''
