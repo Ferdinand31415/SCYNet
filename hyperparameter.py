@@ -146,17 +146,39 @@ class Hyperparameter():
             print '\t%s \t%s' %  (a, b)
         print '\n'
 
-class Hp()
-    def __init__(self, ):
-        self.stage = stage
-        getattr(self, self.stage)()
-        sef.lr_priors = 
+from random import uniform, randint
+class RandomHyperPar()
+    def __init__(self):
+        self.lr= 10**(-uniform(1,6))
+        self.dropout = uniform(0.01,0.4)
+        self.batch = uniform(300,1500)
+        self.layers = randint(3,7)
+        self.neurons = randint(300,1000)
+    
+        #probability for choosing different types
+        #of preprocessing for the pmssm
+        prob = randint(1,2)
+        if prob == 1:
+            self.preproc_pmssm = 'log_norm'
+        elif prob == 2:
+            self.preproc_pmssm = 'sub_mean_div_std'
 
-    def one(self):
-        '''priors over the hp'''
-        self['lr
-        
+        #same for chi2 data
+        prob = randint(1,2)
+        if prob == 1:
+            self.preproc_chi2 = 'div_max'
+        elif prob == 2:
+            self.preproc_chi2 = 'sub_mean_div_std'
+
+        #same for optimizer
+        prob = randint(1,2)
+        if prob ==1:
+            self.opt= 'sgd'
+        elif prob == 2:
+            self.opt= 'adam'
+ 
 #test
 #h = Hyperparameter()
 #mean_errs = {'0.0-100':1.5, '0-50':2.0, '50-100':3.0}
 
+h = RandomHyperPar()
