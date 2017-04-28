@@ -7,6 +7,7 @@ from keras.optimizers import SGD, Adam, Nadam, Adagrad
 #from keras.layers.normalization import BatchNormalization
 from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
+'''
 def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
     d=np.genfromtxt(path)[:,1:]
     p=d[:,:-1]
@@ -24,7 +25,7 @@ def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
     x_test = p[split:]
     y_test = chi2[split:]
     return x_train, x_test, y_train, y_test
-
+'''
 from copy import deepcopy
 
 from Preprocessor import pmssm, chi2, shuffle_data, fulldata
@@ -51,6 +52,7 @@ model.add(Dense(1, kernel_initializer='glorot_uniform',activation=act))
 
 
 import keras.backend as K
+'''
 def mean_error_chi2(y_true, y_pred):
     return 100*K.mean(K.abs(y_pred-y_true))
 
@@ -65,18 +67,11 @@ def trainnadam(lr=1e-1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=
 	model.compile(loss = loss, optimizer = nadam, metrics=[mean_error_chi2])
 	model.fit(x.train,y.train, validation_data =(x.test, y.test), epochs = n,batch_size=b)
 	y.evaluation(x,model)
+'''
 
-#Define Early Stopping(If val_loss doeasn't decrease in 50 epochs stop)
 early_stopping = EarlyStopping(monitor='val_loss', patience=18, mode='min', verbose=1)
-
-#Save the model if new val_los minimum
 modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-#History allows to look at stuff like Loss and Val_Loss later
 history = History()
-
-#Main Lerning Loop. Start with standard Learning rate, then train still val_loss stops decreasing. Then decrease learning rate and train again.
-
 
 #'''
 learnrate=10**(-2.8)
