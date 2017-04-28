@@ -168,7 +168,7 @@ class chi2:
         self.prepare_evaluation(x, model) 
         ranges = [[0,100.0], [0, 53.5], [53.5, 56.0],\
                  [56.0, 70.0], [70.0, 95.0], [95.0, 100.0]]
-        l=7
+        l=11
         chi2 =  'chi2              '
         deco =  '                  '+l*len(ranges)*'_'
         train = 'mean error train |'
