@@ -1,8 +1,19 @@
 import numpy as np
-def write_to_file(path_to_file,line):
-    f = open(str(path_to_file), 'a')# a for append
-    f.write(line)
-    f.close()
+
+def write_to_file(path, result, lockfile):
+    '''has inbuilt protection agains 
+    several processes writing to it'''
+    while True:
+        try:
+            os.mknod(lockfile)
+        except(OSError):
+            time.sleep(0.05)
+            continue
+        f = open(str(path), 'a')
+        f.write(result)
+        f.close()
+        os.remove(lockfile)
+        break
 
 def smart_start(x, y, model, batch):
     try_out = np.logspace(-1.5,-3.5,10)
