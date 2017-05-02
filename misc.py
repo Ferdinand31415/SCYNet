@@ -2,7 +2,8 @@ import numpy as np
 
 def write_to_file(path, result, lockfile):
     '''has inbuilt protection agains 
-    several processes writing to it'''
+    several processes writing to it.
+    But make sure all processes have the same lockfile'''
     while True:
         try:
             os.mknod(lockfile)
@@ -34,12 +35,23 @@ def bad_loss(first_rounds, maxloss=0.6):
     else:
         return False
 
+def bad_loss_anywhere(histos, maxloss=0.6):
+    '''test if badloss is present anywhere in history, abort if true'''
+    if len(histos) < 2:
+        return False
+    history = histos[-1].history['val_loss']
+    if max(history) > maxloss:
+        return True
+    else:
+        return False
+
 def quit_early(histos):
     '''at the moment checks only for "almost no improvement" '''
-    return almost_no_improvement(histos)
+    return almost_no_improvement(histos)\
+        or bad_loss_anywhere(histos)
 
 
-def almost_no_improvement(histos):
+def almost_no_improvement(histos, improvefrac = 0.04):
     '''returns true if almost no improvement at all even though
     we had smaller lr. We can then abort learning for time reasons
     in this case'''
@@ -47,7 +59,7 @@ def almost_no_improvement(histos):
         return False
     h_old = histos[-2].history['val_loss']
     h_new = histos[-1].history['val_loss']
-    if min(h_new) / min(h_old) < 0.05:
+    if min(h_new) / min(h_old) < improvefrac:
         return True
     else:
         return False
@@ -59,7 +71,7 @@ def mean_loss_chi2(y_true, y_pred):
 
 def mae_poisson(stat_error):
     def loss(y_true, y_pred):
-        return K.mean(K.abs(y_pred-ytrue)/stat_error)) #just something random to point out how it works
+        return K.mean(K.abs(y_pred-ytrue)/stat_error) #just something random to point out how it works
     return loss
 
 from keras.callbacks import EarlyStopping

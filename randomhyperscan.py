@@ -11,8 +11,8 @@ import keras.backend as K
 
 #own scripts
 import misc
-from netbuilder import build_Sequential, build_Optimizer
-from hyperparameter import Hyperparameter
+from netbuilder import build_Sequential_RH, build_Optimizer_RH
+from hyperparameter import RandomHyperPar
 
 #config
 result_txt = str(sys.argv[1])
@@ -43,35 +43,31 @@ for i in range(N):
     x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
     y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split)
 
-    try:
-        lr=hp.lr
-        first_rounds = History()
-        #sometimes lr is too high and we get nan or inf or something..
-        model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[first_rounds])
-        if misc.bad_loss(first_rounds):
-            print 'quitting because loss too high %s' % first_rounds.history
-            result = hp.string() + 'early_quit_error:' + str(82.327)+'\n' #dont take the number serious. but still save atleast something if failed
-            misc.add_to_file(result_txt, result)
-            continue
+    lr=hp.lr
+    first_rounds = History()
+    #sometimes lr is too high and we get nan or inf or something..
+    model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[first_rounds])
+    if misc.bad_loss(first_rounds):
+        print 'quitting because loss too high %s' % first_rounds.history
+        result = hp.string() + 'early_quit_error:' + str(82.327)+'\n' #dont take the number serious. but still save atleast something if failed
+        misc.add_to_file(result_txt, result)
+        continue
 
-        counter = 0 
-        while lr > 10**(-7.1):
-            #learning utility
-            early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
-            patience = int(patience/1.20) #patience decrease. No more huge gains expected after we have reduced lr several times. we want to save computation time
+    counter = 0 
+    while lr > 10**(-7.1):
+        #learning utility
+        early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
+        patience = int(patience/1.20) #patience decrease. No more huge gains expected after we have reduced lr several times. we want to save computation time
 
-            history = History()
-            model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
-            model.load_weights('bestnet.hdf5')
-            lr /= 5.0
-            K.set_value(model.optimizer.lr, lr)
-            print '\n\nNEW LEARNING RATE:', lr, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
-            histos.append(history)
-            if misc.quit_early(histos):
-                break
-    except KeyboardInterrupt:
-        #just for testing
-        sys.exit('manually canceled because of keyboard interrupt')
+        history = History()
+        model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
+        model.load_weights('bestnet.hdf5')
+        lr /= 5.0
+        K.set_value(model.optimizer.lr, lr)
+        print '\n\nNEW LEARNING RATE:', lr, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
+        histos.append(history)
+        if misc.quit_early(histos):
+            break #result of run will get saved below!
 
     print 'final evaluation'
     model.load_weights('bestnet.hdf5')

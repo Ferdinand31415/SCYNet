@@ -49,7 +49,7 @@ def build_Sequential_RH(hp):
 
    
     #hidden layers
-    for i in range(1, len(hp.layers)): #skipping first!
+    for i in range(1, hp.layers): #skipping first!
         model.add(Dense(hp.neurons,\
                         kernel_initializer=hp.init))
         model.add(Dropout(hp.dropout))
