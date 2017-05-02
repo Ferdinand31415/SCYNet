@@ -44,11 +44,11 @@ learnrate=10**(-3)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
 while learnrate > 10**(-7.1):
-        K.set_value(model.optimizer.lr, learnrate)
-	model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
-	model.load_weights('bestnet.hdf5')
-	learnrate /= 4
-	print 'learnrate:', learnrate
+    K.set_value(model.optimizer.lr, learnrate)
+    model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
+    model.load_weights('bestnet.hdf5')
+    learnrate /= 4
+    print 'learnrate:', learnrate
 
 y.evaluation(x, model)
 
