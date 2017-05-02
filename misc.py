@@ -57,8 +57,14 @@ def mean_loss_chi2(y_true, y_pred):
     return 100*K.mean(K.abs(y_pred-y_true))
 
 
+def mae_poisson(stat_error):
+    def loss(y_true, y_pred):
+        return K.mean(K.abs(y_pred-ytrue)/stat_error)) #just something random to point out how it works
+    return loss
+
 from keras.callbacks import EarlyStopping
-class troll(EarlyStopping):         
+class VeryEarlyStopper(EarlyStopping):
+    '''was intended to stop training if loss is too high. but i dont use it'''
     def __init__(self, patience=4):
         super(troll, self).__init__()
         self.patience=patience

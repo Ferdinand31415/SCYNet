@@ -2,7 +2,7 @@ import numpy as np
 from numpy.random import RandomState
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
-from keras.layers.advanced_activations import LeakyReLU
+from keras.layers.advanced_activations import LeakyReLU, PReLU
 from keras.regularizers import l2
 from keras.optimizers import SGD, Adam, Nadam, Adagrad
 #from keras.layers.normalization import BatchNormalization
@@ -24,7 +24,7 @@ y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25],
 
 model = Sequential()
 LReLu = LeakyReLU(alpha=0.3)
-n, act, init = 300, 'relu', 'glorot_uniform'
+n, act, init = 300, 'linear', 'glorot_uniform'
 model.add(Dense(n, kernel_initializer=init,
 #		kernel_initializer='zero',
 		activation=act,
@@ -32,6 +32,7 @@ model.add(Dense(n, kernel_initializer=init,
 for i in range(2):
     model.add(Dense(n-0*i, kernel_initializer=init,activation=act))#, W_regularizer=l2(0.001)))
     model.add(Dropout(0.08))
+    model.add(LeakyReLU(0.3))
 model.add(Dense(1, kernel_initializer=init,activation=act))
 
 

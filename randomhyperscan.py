@@ -35,15 +35,13 @@ for i in range(N):
     #build model according to hp
     model = build_Sequential_RH(hp)
     opt = build_Optimizer_RH(hp)
+    #loss=misc.mae_poisson
     model.compile(loss='mae', optimizer=opt) #, metrics=[mean_loss_chi2])
 
     #shuffle data, so we dont learn hyperparameters for a certain validation set
     data.shuffle()
     x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
     y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split)
-
-    #find starting learing rate. Not too high(instable + nonconverging)
-    #or too low (too slow learning)
 
     try:
         lr=hp.lr
@@ -52,13 +50,15 @@ for i in range(N):
         model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[first_rounds])
         if misc.bad_loss(first_rounds):
             print 'quitting because loss too high %s' % first_rounds.history
+            result = hp.string() + 'early_quit_error:' + str(82.327)+'\n' #dont take the number serious. but still save atleast something if failed
+            misc.add_to_file(result_txt, result)
             continue
 
         counter = 0 
         while lr > 10**(-7.1):
             #learning utility
             early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
-            patience = int(patience/1.15) #patience decrease. No more huge gains expected after we have reduced lr. we want to save computation time
+            patience = int(patience/1.20) #patience decrease. No more huge gains expected after we have reduced lr several times. we want to save computation time
 
             history = History()
             model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
@@ -70,7 +70,7 @@ for i in range(N):
             if misc.quit_early(histos):
                 break
     except KeyboardInterrupt:
-        #put point into waiting again
+        #just for testing
         sys.exit('manually canceled because of keyboard interrupt')
 
     print 'final evaluation'

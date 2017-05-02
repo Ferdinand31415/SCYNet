@@ -37,7 +37,7 @@ class pmssm:
     def div_max(self):
         '''divide by maximum'''
         for i in range(self.x.shape[1]):
-            maxi = max(self.x[:,i])
+            maxi = max(abs(self.x[:,i]))
             self.x[:,i] /= maxi 
 
     def min_max(self):
