@@ -16,6 +16,7 @@ def write_to_file(path, result, lockfile):
         break
 
 def smart_start(x, y, model, batch):
+    '''unfinished'''
     try_out = np.logspace(-1.5,-3.5,10)
     histos = []
     history = History()
@@ -25,14 +26,16 @@ def smart_start(x, y, model, batch):
             epochs=3, batch_size=batch, verbose=1,\
             callbacks=[history,early_stopping,modcp])
 
-def bad_loss(first_rounds):
-    loss = first_rounds.history['loss'][0]
-    if loss > 0.75 or np.isnan(loss) or np.isinf(loss):
+def bad_loss(first_rounds, maxloss=0.6):
+    '''test if bad loss is present, abort training if true'''
+    loss = first_rounds.history['val_loss'][0]
+    if loss > maxloss or np.isnan(loss) or np.isinf(loss):
         return True
     else:
         return False
 
 def quit_early(histos):
+    '''at the moment checks only for "almost no improvement" '''
     return almost_no_improvement(histos)
 
 

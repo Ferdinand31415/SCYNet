@@ -26,7 +26,6 @@ from Preprocessor import pmssm, chi2, fulldata
 data = fulldata()
 
 #learning utilities
-early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
 modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
 #main hyperloop
@@ -54,8 +53,13 @@ for i in range(N):
         if misc.bad_loss(first_rounds):
             print 'quitting because loss too high %s' % first_rounds.history
             continue
- 
+
+        counter = 0 
         while lr > 10**(-7.1):
+            #learning utility
+            early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
+            patience = int(patience/1.15) #patience decrease. No more huge gains expected after we have reduced lr. we want to save computation time
+
             history = History()
             model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
             model.load_weights('bestnet.hdf5')

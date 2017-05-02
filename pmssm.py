@@ -22,25 +22,25 @@ x = pmssm(data.data[:,:-1], preproc = ['log_norm','min_max'], split = split)
 y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25], split= split)
 
 model = Sequential()
-n, act = 300, 'relu'
-model.add(Dense(n, kernel_initializer='glorot_uniform',
+n, act, init = 300, 'relu', 'glorot_uniform'
+model.add(Dense(n, kernel_initializer=init,
 #		kernel_initializer='zero',
 		activation=act,
 		input_dim=x.train.shape[1]))
 for i in range(2):
-    model.add(Dense(n-0*i, kernel_initializer='glorot_uniform',activation=act))#, W_regularizer=l2(0.001)))
+    model.add(Dense(n-0*i, kernel_initializer=init,activation=act))#, W_regularizer=l2(0.001)))
     model.add(Dropout(0.08))
-model.add(Dense(1, kernel_initializer='glorot_uniform',activation=act))
+model.add(Dense(1, kernel_initializer=init,activation=act))
 
 
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=18, mode='min', verbose=1)
-from misc import troll
-early_stopping = troll(patience=4) 
+#from misc import troll
+#early_stopping = troll(patience=4) 
 modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 history = History()
 
-learnrate=10**(12)
+learnrate=10**(-3)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
 while learnrate > 10**(-7.1):
