@@ -22,7 +22,8 @@ x = pmssm(data.data[:,:-1], preproc = ['log_norm','min_max'], split = split)
 y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25], split= split)
 
 model = Sequential()
-n, act, init = 300, 'relu', 'glorot_uniform'
+LReLu = keras.layers.advanced_activations.LeakyReLU(alpha=0.3)
+n, act, init = 300, LReLu, 'glorot_uniform'
 model.add(Dense(n, kernel_initializer=init,
 #		kernel_initializer='zero',
 		activation=act,
@@ -43,12 +44,15 @@ history = History()
 learnrate=10**(-3)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
+
+lr_epoch = 0
 while learnrate > 10**(-7.1):
     K.set_value(model.optimizer.lr, learnrate)
     model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
     model.load_weights('bestnet.hdf5')
     learnrate /= 4
-    print 'learnrate:', learnrate
+    lr_epoch += 1
+    print 'learnrate:', learnrate, '\tAmount of times lr has beed adjusted:',lr_epoch
 
 y.evaluation(x, model)
 
