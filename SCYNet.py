@@ -1,18 +1,19 @@
 from copy import deepcopy
 from Preprocessor import pmssm, chi2
-from keras.models import model_from_json
+from keras.models import model_from_json, load_model
 import numpy as np
+import sys
 
 class SCYNet:
     '''generate a fast chi2 prediction for pmssm points'''
-    def __init__(self, mask=None, output=None):
+    def __init__(self, mask=[0,100], output='SCYNet.out'):
         self.mask = mask #if one wants to exclude certain chi2 from getting written to output.
         #for example, mask = [60,90] will output only chi2 in this range
         self.output = output #name of file to give results
-        self.load_model() #generate keras model
+        self.model = load_model('SCYNet.h5') #generate keras model
+        #self.y = chi2(data=None, preproc=[100,25], params=None, split=1)
 
-
-    def load_model(self, name='SCYNet'):
+    def load_json_model(self, name='SCYNet'):
         '''generates a keras neural net model'''
         # load json and create model
         json_file = open('%s.json' % name, 'r')
@@ -39,14 +40,24 @@ class SCYNet:
                 self.pred = self.model.predict(self.pp_data)
         elif isinstance(data, np.ndarray) and data.shape[1] == 11:
             self.data = data
-            self.preprocess() #preprocesses the just arrived self.data
+            self.preprocess() #preprocesses the just arrived self.data to self.pp_data
             self.pred = self.model.predict(self.pp_data)
         else:
             raise Exception('SCYNet has no pmssm data with shape(N,11) to predict chi2')
-        return self.backtransform_chi2()
+        self.pred = self.pred.flatten()
+        return self.backtransform_chi2() #need to backtransform chi2 into 0..100 range
 
     def backtransform_chi2(self):
-        return chi2
+        #1. mult_max
+        self.pred *= 100
+        #2. back_square
+        cut, delta = [100, 25]
+        y = self.pred
+        mask = (y > cut-delta) == (y < cut) #backtrafo needs a different mask than trafo
+        y[mask]= (cut+delta)-2*np.sqrt(delta*(cut-y[mask]))
+        y[y>cut] = cut
+        self.pred = y
+        return self.pred
 
     def set_data(self, data):
         '''data must be of type np array'''
@@ -60,38 +71,44 @@ class SCYNet:
         '''reading in the data. test if numpy file ('something.npy') or txtfile'''
         try:
             self.data = np.load(inputfile)
-        except(IOError):
-            pass
-        
-        try:
-            self.data = np.genfromtxt(inputfile)
-        except:
-            print('You must provide either a numpy array'
-                  'or whitespace seperated textfile')
+        except(IOError):   
+            try:
+                self.data = np.genfromtxt(inputfile)#[:,1:-1] #for testing 13TeV_chi2_disjoint_2
+            except:
+                print('You must provide either a numpy array'
+                      'or whitespace seperated textfile')
         if self.data.shape[1] != 11:
-            raise ValueError('data has wrong shape, shape=%s' % self.data.shape)        
-
+            raise ValueError('data has wrong shape, shape=%s' % self.data.shape)
+        self.preprocess()
+        
     def write_output(self, mode='all'):
         '''writes output to file'''
-        if self.output == None:
-           self.output = 'SCYNet.output'
-
-        if self.mask != None:
-            chi2 = deepcopy(self.pred)
-            mask = (chi2 > self.mask[0]) == (chi2 < self.mask[1])
-            chi2 = chi2[mask]
-        else:
-            chi2 = self.pred
+        chi_squared = deepcopy(self.pred)
+        mask = (chi_squared >= self.mask[0]) == (chi_squared <= self.mask[1])
+        chi_squared = chi_squared[mask]
     
-        if mode == 'chi2only':
+        if mode == 'chi2_only':
             with open(self.output, 'w') as file:#destroys any existing result_file
-                for i in range(len(chi2)):
-                    file.write(str(chi2[i]) + '\n')
-        else:
+                for i in range(len(chi_squared)):
+                    file.write(str(chi_squared[i]) + '\n')
+        elif mode == 'all':
              with open(self.output, 'w') as file:#destroys any existing result_file
-                for i in range(len(chi2)):
-                    line=' '.join(map(str, self.data[i]))+' '+str(chi2[i])+'\n'
+                for i in range(len(chi_squared)):
+                    line=' '.join(map(str, self.data[mask][i]))+' '+str(chi_squared[i])+'\n'
                     file.write(line)
+        elif mode == 'pmssm_only':
+             with open(self.output, 'w') as file:#destroys any existing result_file
+                for i in range(len(chi_squared)):
+                    line=' '.join(map(str, self.data[mask][i]))+'\n'
+                    file.write(line)
+ 
             
 
 
+if __name__ == '__main__':
+    mask = [int(sys.argv[1]), int(sys.argv[2])]
+    SN = SCYNet(mask)
+    SN.read_data('/net/home/lxtsfs1/tpe/feiteneuer/all_points_02_05')
+    #SN.read_data('/net/home/lxtsfs1/tpe/feiteneuer/13TeV_chi2_disjoint_2') #for testing
+    pred = SN.predict()
+    SN.write_output(mode = 'pmssm_only')

@@ -43,7 +43,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=58, mode='min', verb
 modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 history = History()
 
-learnrate=10**(-3.0)
+learnrate=10**(-2.8)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
 
