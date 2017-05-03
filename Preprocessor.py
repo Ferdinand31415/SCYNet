@@ -36,24 +36,30 @@ class pmssm:
 
     def div_max(self):
         '''divide by maximum'''
+        self.maxis = np.zeros(11)
         for i in range(self.x.shape[1]):
             maxi = max(abs(self.x[:,i]))
             self.x[:,i] /= maxi 
+            self.maxis[i] = maxi
 
     def min_max(self):
         '''normalize between zero and one'''
+        self.minmaxis = np.zeros((11,2))
         for i in range(self.x.shape[1]):
             mini = min(self.x[:,i])
             maxi = max(self.x[:,i])
+            self.minmaxis[i] = [mini, maxi]
             self.x[:,i] = (self.x[:,i] - mini) / (maxi - mini)
 
     def log_norm(self):
         '''scale by log'''
+        self.logis = np.zeros(11)
         for i in range(self.x.shape[1]):
             p = self.x[:,i]
             mask = p < 0
             p[mask] *= -1
             p = np.log(p - min(p) + 2) #+2 regularizes, we want no log(0)
+            self.logis[i] = min(p)
             p[mask] *= -1
             self.x[:,i] = p
 
