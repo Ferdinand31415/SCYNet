@@ -24,12 +24,12 @@ y = chi2(data.data[:,-1], preproc = ['square_cut','min_max'], params = [100,25],
 
 model = Sequential()
 LReLu = LeakyReLU(alpha=0.3)
-n, act, init = 400, 'linear', 'glorot_uniform'
+n, act, init = 200, 'linear', 'glorot_uniform'
 model.add(Dense(n, kernel_initializer=init,
 #		kernel_initializer='zero',
 		activation=act,
 		input_dim=x.train.shape[1]))
-for i in range(4):
+for i in range(2):
     model.add(Dense(n-0*i, kernel_initializer=init,activation=act))#, W_regularizer=l2(0.001)))
     model.add(Dropout(0.08))
     model.add(LeakyReLU(0.3))
@@ -41,7 +41,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=70, mode='min', verb
 modcp = ModelCheckpoint('output/bestnet.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 history = History()
 
-learnrate=10**(-2.8)
+learnrate=10**(-3.0)
 opt = Nadam(lr=learnrate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
 model.compile(loss='mae', optimizer=opt)
 
