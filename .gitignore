@@ -1,6 +1,7 @@
 *.pyc
 *.json
 *.h5
-*.hd5f
+*.hdf5
 .*.swp
 .*.swo
+.nfs*

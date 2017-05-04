@@ -18,7 +18,8 @@ from hyperparameter import RandomHyperPar
 result_txt = str(sys.argv[1])
 N = int(sys.argv[2])
 split = 0.8
-patience = 2
+initial_patience = 2
+bestnet = 'output/best.h5'
 histos = []
 
 #pmssm
@@ -26,7 +27,7 @@ from Preprocessor import pmssm, chi2, fulldata
 data = fulldata()
 
 #learning utilities
-modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
 #main hyperloop
 for i in range(N):
@@ -55,13 +56,16 @@ for i in range(N):
 
     counter = 0 
     while lr > 10**(-7.1):
-        #learning utility
-        early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
-        patience = int(patience/1.20) #patience decrease. No more huge gains expected after we have reduced lr several times. we want to save computation time
+        counter += 1
 
+        #learning utility
+        patience = max(5, int(initial_patience/(counter)**(0.5))) #patience decrease 
+        #No more huge gains expected after we have reduced lr several times. we want to save computation time
+        early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
         history = History()
+
         model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
-        model.load_weights('bestnet.hdf5')
+        model.load_weights(bestnet)
         lr /= 5.0
         K.set_value(model.optimizer.lr, lr)
         print '\n\nNEW LEARNING RATE:', lr, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
@@ -70,7 +74,7 @@ for i in range(N):
             break #result of run will get saved below!
 
     print 'final evaluation'
-    model.load_weights('bestnet.hdf5')
+    model.load_weights(bestnet)
     y.evaluation(x, model) #is needed for getting mean_errs 
     result = hp.string() + 'error:' + str(y.mean_errors['0.0-100.0'])+'\n'
     misc.add_to_file(result_txt, result)

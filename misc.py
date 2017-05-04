@@ -118,7 +118,8 @@ def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
     y_test = chi2[split:]
     return x_train, x_test, y_train, y_test
 
-
+def patience_reduction(patience, lr_epoch):
+    return max(5, int(patience/(lr_epoch)**(0.5))
 
 '''
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.66, patience=13, min_lr=10**(-6.0), verbose=1)

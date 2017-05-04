@@ -6,7 +6,7 @@ import sys
 
 class SCYNet:
     '''generate a fast chi2 prediction for pmssm points'''
-    def __init__(self, mask=[0,100], output='SCYNet.out'):
+    def __init__(self, mask=[0,100], output='output/SCYNet.out'):
         self.mask = mask #if one wants to exclude certain chi2 from getting written to output.
         #for example, mask = [60,90] will output only chi2 in this range
         self.output = output #name of file to give results

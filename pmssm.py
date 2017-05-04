@@ -20,7 +20,7 @@ use_only = range(11)
 
 data.shuffle()
 x = pmssm(data.data[:,:-1], preproc = ['div_max'], split = split)
-y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25], split= split)
+y = chi2(data.data[:,-1], preproc = ['square_cut','min_max'], params = [100,25], split= split)
 
 model = Sequential()
 LReLu = LeakyReLU(alpha=0.3)
@@ -37,10 +37,8 @@ model.add(Dense(1, kernel_initializer=init,activation='relu'))
 
 
 
-early_stopping = EarlyStopping(monitor='val_loss', patience=58, mode='min', verbose=1)
-#from misc import troll
-#early_stopping = troll(patience=4) 
-modcp = ModelCheckpoint("bestnet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+early_stopping = EarlyStopping(monitor='val_loss', patience=70, mode='min', verbose=1)
+modcp = ModelCheckpoint('output/bestnet.hdf5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 history = History()
 
 learnrate=10**(-2.8)
@@ -51,7 +49,7 @@ lr_epoch = 0
 while learnrate > 10**(-7.1):
     K.set_value(model.optimizer.lr, learnrate)
     model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=1000, verbose=1, callbacks=[history,early_stopping,modcp])
-    model.load_weights('bestnet.hdf5')
+    model.load_weights('output/bestnet.hdf5')
     learnrate /= 4
     lr_epoch += 1
     print 'learnrate:', learnrate, '\tAmount of times lr has beed adjusted:',lr_epoch
