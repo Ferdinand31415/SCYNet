@@ -7,7 +7,7 @@ from keras.regularizers import l2
 from keras.optimizers import SGD, Adam, Nadam, Adagrad
 #from keras.layers.normalization import BatchNormalization
 from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-import sys
+import sys, os
 import keras.backend as K
 
 from copy import deepcopy
