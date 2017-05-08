@@ -15,15 +15,15 @@ from Preprocessor import pmssm, chi2, shuffle_data, fulldata
 
 data = fulldata()
 
-split = 9.0/10
-use_only = range(11)
+split = 9.0/10 #training/validiation split
+use_only = range(11) #use full pmssm set
+alpha=0.2 #for Leaky Relu
 
 data.shuffle()
 x = pmssm(data.data[:,:-1], preproc = ['div_max'], split = split)
 y = chi2(data.data[:,-1], preproc = ['square_cut','min_max'], params = [100,25], split= split)
 
 model = Sequential()
-LReLu = LeakyReLU(alpha=0.2)
 n, act, init = 500, 'linear', 'glorot_uniform'
 model.add(Dense(n, kernel_initializer=init,
 #		kernel_initializer='zero',
@@ -32,7 +32,7 @@ model.add(Dense(n, kernel_initializer=init,
 for i in range(3):
     model.add(Dense(n-0*i, kernel_initializer=init,activation=act))#, W_regularizer=l2(0.001)))
     model.add(Dropout(0.08))
-    model.add(LReLu)
+    model.add(LeakyReLU(alpha=alpha))
 model.add(Dense(1, kernel_initializer=init,activation='relu'))
 
 
