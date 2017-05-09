@@ -7,3 +7,4 @@
 .nfs*
 /output/*.hdf5
 /output/*.h5
+/output/SCYNet.out
