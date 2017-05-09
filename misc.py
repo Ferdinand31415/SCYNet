@@ -50,6 +50,15 @@ def quit_early(histos):
     return almost_no_improvement(histos)\
         or bad_loss_anywhere(histos)
 
+def result_string(hp, y, earlyquit=False)
+    '''save this to a txt file. its the result of the hyperrandomscan'''
+    res = hp.string()
+    res += 'chi2trafo:'+str(y.back_info)+','
+    if earlyquit:
+        res += 'error:82.38'
+    else:
+        res += 'error:'+str(y.mean_errors['0.0-100.0'])
+    return res + '\n'
 
 def almost_no_improvement(histos, improvefrac = 0.04):
     '''returns true if almost no improvement at all even though

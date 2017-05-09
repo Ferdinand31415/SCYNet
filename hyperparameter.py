@@ -149,50 +149,62 @@ class Hyperparameter():
 from random import uniform, randint
 class RandomHyperPar():
     def __init__(self):
-        self.lr = 10**(-uniform(2,4))
+        self.lr = 10**(-uniform(2.5,3.5))
         self.dropout = 10**(-uniform(2.0,0.45))
         self.batch = randint(300,1500)
-        self.layers = randint(3,7)
-        self.neurons = randint(300,1000)
+        self.layers = randint(2,7)
+        self.neurons = randint(50,500)
    
-        prob = [randint(0,1) for p in range(10)] 
+        
         #probability for choosing different types
         #of preprocessing for the pmssm
 
-        if prob[0] == 0:
-            self.pp_pmssm = ['log_norm']
-        else:
-            self.pp_pmssm = ['sub_mean_div_std']
-        if prob[5] == 1:
-            self.pp_pmssm += ['min_max']
-        else:
-            self.pp_pmssm += ['div_max']
+        p = randint(0,6)
+        if p == 0:
+            self.pp_pmssm = ['log_norm','sub_mean_div_std']
+        elif p == 1:
+            self.pp_pmssm = ['log_norm','min_max']
+        elif p == 2:
+            self.pp_pmssm = ['log_norm','div_max']
+        elif p == 3
+            self.pp_pmssm = ['min_max']
+        elif p == 4:
+            self.pp_pmssm = ['sub_mean_div_std','div_max']
+        elif p == 5:
+            self.pp_pmssm = ['sub_mean_div_std','min_max']
+        elif p == 6:
+            self.pp_pmssm = ['div_max']
             
-
+        p = randint(0,2)
         #same for chi2 data
-        if prob[1] == 0:
+        if p == 0:
             self.pp_chi2 = ['square_cut','div_max']
-        else:
+        elif p == 1:
             self.pp_chi2 = ['square_cut','sub_mean_div_std']
+        elif p == 2:
+            self.pp_chi2 = ['square_cut','min_max']
+
+        prob = [randint(0,1) for p in range(10)]
 
         #same for optimizer
-        if prob[2] == 0:
+        if randint(0,10) < 2: #have not rly used sgd, so try only few
             self.opt= 'sgd'
         else:    
-            self.opt= 'adam'
+            self.opt= 'nadam'
 
         #kernel initializer
-        if prob[3] == 0:
+        if randint(0,10) < 9: #i find glorot works better, so try more
             self.init = 'glorot_uniform'
         else:
             self.init = 'normal'
 
         #activation function
         #tanh never works... atm only RELU
-        if prob[4] == 0:
-            self.act = 'relu'
+        if randint(0,10) < 9:
+            self.act = 'LReLU'
+            self.alpha = uniform(0.01, 0.4)
         else:
-            self.act = 'relu'
+            self.act = 'PReLU'
 
     def __str__(self):
         s = '\nhyperparameter:'

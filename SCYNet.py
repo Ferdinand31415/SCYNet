@@ -107,8 +107,9 @@ class SCYNet:
 
 if __name__ == '__main__':
     mask = [int(sys.argv[1]), int(sys.argv[2])]
+    raw_data = sys.argv[3]
     SN = SCYNet(mask)
-    SN.read_data('/net/home/lxtsfs1/tpe/feiteneuer/all_points_02_05')
+    SN.read_data(raw_data)
     #SN.read_data('/net/home/lxtsfs1/tpe/feiteneuer/13TeV_chi2_disjoint_2') #for testing
     pred = SN.predict()
     SN.write_output(mode = 'pmssm_only')
