@@ -21,7 +21,7 @@ class fulldata:
 class pmssm:
     def __init__(self, data, preproc, split, use_only=range(11)):
         self.use_only = use_only
-        self.x = data   
+        self.x = data
         self.split = int(split*len(self.x))
         self.preproc = preproc
         self.preprocess() 
@@ -83,7 +83,8 @@ class chi2:
         self.chi2 = data
         self.split = int(split*len(self.chi2))
         self.start = deepcopy(self.chi2[:50])
-        self.back = [] #save the backtransformations here
+        self.back = [] #save which backtransformations are to be applied later
+        self.back_info = {} #numerical info of backtrafos
         self.preprocess() 
 
     def split_train_data(self):
@@ -95,6 +96,7 @@ class chi2:
         self.maxi = max(self.chi2)
         self.chi2 /= self.maxi
         self.back.append('mult_max')
+        self.back_info.update({'maxi':self.maxi})
     def mult_max(self, chi2):
         return self.maxi * chi2
 
@@ -104,6 +106,7 @@ class chi2:
         self.std = self.chi2.std()
         self.chi2 = (self.chi2 - self.mean)/self.std
         self.back.append('mult_std_add_mean')
+        self.back_info.update({'mean':self.mean, 'std':self.std})
     def mult_std_add_mean(self, chi2):
         return self.std*chi2 + self.mean
 
@@ -113,6 +116,7 @@ class chi2:
         self.maxi = max(self.chi2)
         self.chi2 = (self.chi2 - self.mini)/(self.maxi - self.mini)
         self.back.append('max_min')
+        self.back_info.append({'mini':self.mini, 'maxi':self.maxi})
     def max_min(self, chi2):
         return (self.maxi - self.mini)*chi2 + self.mini
 

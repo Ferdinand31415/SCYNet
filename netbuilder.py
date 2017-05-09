@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD, Adam, Nadam, Adagrad
+from keras.layers.advanced_activations import LeakyReLU, PReLU
 
 #for saving and loading models
 from keras.models import model_from_json
@@ -53,8 +54,11 @@ def build_Sequential_RH(hp):
         model.add(Dense(hp.neurons,\
                         kernel_initializer=hp.init))
         model.add(Dropout(hp.dropout))
-        model.add(Activation(hp.act))
-
+        model.add(Activation('linear'))
+        if hp.act == 'LReLU':
+            model.add(LeakyReLU(alpha=hp.alpha))
+        elif hp.act == 'PReLU':
+            model.add(PReLU())# same as LReLU, but learns alpha
 
     #output layer
     model.add(Dense(1, kernel_initializer=hp.init))
@@ -69,7 +73,7 @@ def build_Optimizer(hp, starting_lr):
         raise ValueError('no optimizer was given inside %s' % hp)
 
 def build_Optimizer_RH(hp):
-    if hp.opt == 'adam':
+    if hp.opt == 'nadam':
         return Nadam(lr=hp.lr, beta_1=0.9, beta_2=0.999, \
                     epsilon=1e-08, schedule_decay=0)
     if hp.opt == 'sgd':

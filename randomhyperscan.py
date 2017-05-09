@@ -17,8 +17,8 @@ from hyperparameter import RandomHyperPar
 #config
 result_txt = str(sys.argv[1])
 N = int(sys.argv[2])
-split = 0.8
-initial_patience = 2
+split = 0.7
+initial_patience = 20
 bestnet = 'output/best.h5'
 histos = []
 
@@ -32,11 +32,12 @@ modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=1, save_best_only=T
 #main hyperloop
 for i in range(N):
     hp = RandomHyperPar()
+    print '\niteration=%s\n' % i
     print hp
     #build model according to hp
     model = build_Sequential_RH(hp)
     opt = build_Optimizer_RH(hp)
-    #loss=misc.mae_poisson
+    #loss=misc.mae_poisson #if we have an error on chi2, use this!
     model.compile(loss='mae', optimizer=opt) #, metrics=[mean_loss_chi2])
 
     #shuffle data, so we dont learn hyperparameters for a certain validation set
@@ -50,7 +51,7 @@ for i in range(N):
     model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[first_rounds])
     if misc.bad_loss(first_rounds):
         print 'quitting because loss too high %s' % first_rounds.history
-        result = hp.string() + 'early_quit_error:' + str(82.327)+'\n' #dont take the number serious. but still save atleast something if failed
+        result = misc.result_string(hp, y, earlyquit=True)
         misc.add_to_file(result_txt, result)
         continue
 
@@ -76,6 +77,6 @@ for i in range(N):
     print 'final evaluation'
     model.load_weights(bestnet)
     y.evaluation(x, model) #is needed for getting mean_errs 
-    result = hp.string() + 'error:' + str(y.mean_errors['0.0-100.0'])+'\n'
+    result = misc.result_string(hp, y)
     misc.add_to_file(result_txt, result)
 
