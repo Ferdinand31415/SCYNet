@@ -54,12 +54,21 @@ def quit_early(histos):
 def result_string(hp, y, earlyquit=False):
     '''save this to a txt file. its the result of the hyperrandomscan'''
     res = hp.string()
-    res += 'chi2trafo:'+str(y.back_info)+','
+    res += 'chi2trafo?'+str(y.back_info)+';'
     if earlyquit:
-        res += 'error:82.38'
+        res += 'error?82.38'
     else:
-        res += 'error:'+str(y.mean_errors['0.0-100.0'])
+        res += 'error?'+str(y.mean_errors['0.0-100.0'])
     return res + '\n'
+
+def result_string_to_dict(line):
+    hp = {}
+    L = line.split(';')
+    for l in L:
+        key, value = l.split('?')
+        print key, '\t', value
+        hp.update({str(key):str(value)})
+    return hp
 
 def almost_no_improvement(histos, improvefrac = 0.04):
     '''returns true if almost no improvement at all even though

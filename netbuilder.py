@@ -79,7 +79,7 @@ def build_Optimizer(hp, starting_lr):
 
 def build_Optimizer_RH(hp):
     if hp.opt == 'nadam':
-        return Nadam(lr=hp.lr, beta_1=0.9, beta_2=0.999, \
+        return Nadam(lr=hp.lr, beta_1=hp.beta_1, beta_2=hp.beta_2, \
                     epsilon=1e-08, schedule_decay=0)
     if hp.opt == 'sgd':
         return SGD(lr=hp.lr, momentum=0.9, decay=0, nesterov=True) 

@@ -76,8 +76,8 @@ class pmssm:
 
 class chi2:
     '''reads in the chi2, has functionality for evaluation of model'''
-    def __init__(self, data, preproc, params, split=6.0/8):
-        self.verbose = False #just for some printing
+    def __init__(self, data, preproc, params, split=6.0/8, verbose=False):
+        self.verbose = verbose #just for some printing
         self.preproc = preproc
         self.params = params
         self.chi2 = data
@@ -171,8 +171,10 @@ class chi2:
         if self.verbose: print 'preparing_evaluations'
         y_train_pred = model.predict(x.train)
         y_test_pred = model.predict(x.test)
+        if self.verbose: print y_test_pred.flatten()[:20]
         self.train_pred = self.backtrafo(y_train_pred.flatten())
         self.test_pred = self.backtrafo(y_test_pred.flatten())
+        if self.verbose: print self.test_pred[:20]
 
     def evaluation(self,x,model):
         self.prepare_evaluation(x, model) 

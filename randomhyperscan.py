@@ -17,10 +17,10 @@ from hyperparameter import RandomHyperPar
 
 #config
 result_txt = 'output/result_random_hyperscan.txt'#str(sys.argv[1])
-N = int(sys.argv[1])
+N = 10000#int(sys.argv[1])
 split = 0.7
-initial_patience = 20
-lr_divisor = 5.0
+initial_patience = 2
+lr_divisor = 20.0
 bestnet = 'output/temp_%s_best.h5' % time() #now this process has a unique temporary best net
 histos = []
 
@@ -28,8 +28,6 @@ histos = []
 from Preprocessor import pmssm, chi2, fulldata
 data = fulldata()
 
-#learning utilities
-modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
 #main hyperloop
 for i in range(N):
@@ -45,7 +43,9 @@ for i in range(N):
     #shuffle data, so we dont learn hyperparameters for a certain validation set
     data.shuffle()
     x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
-    y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split)
+    y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split,verbose=True)
+
+    modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
     lr=hp.lr
     first_rounds = History()
@@ -57,12 +57,12 @@ for i in range(N):
         misc.append_to_file(result_txt, result)
         continue
 
-    counter = 0 
-    while lr > 10**(-6.05):
-        counter += 1
+    lr_epoch = 0 
+    while lr > hp.lr/5:#10**(-3.05):
+        lr_epoch += 1
 
         #learning utility
-        patience = max(5, int(initial_patience/(counter)**(0.5))) #patience decrease 
+        patience = max(2, int(initial_patience/(lr_epoch)**(0.5))) #patience decrease 
         #No more huge gains expected after we have reduced lr several times. we want to save computation time
         early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
         history = History()
@@ -71,14 +71,26 @@ for i in range(N):
         model.load_weights(bestnet)
         lr /= lr_divisor
         K.set_value(model.optimizer.lr, lr)
-        print '\n\nNEW LEARNING RATE:', lr#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
+        print '\n\nNEW LEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
         histos.append(history)
         if misc.quit_early(histos):
             break #result of run will get saved below!
 
     print 'final evaluation'
     model.load_weights(bestnet)
-    y.evaluation(x, model) #is needed for getting mean_errs 
+    y.evaluation(x, model) #is needed for getting mean_errs
+    for value in y.mean_errors.values():
+        if np.isnan(value[0]) or np.isnan(value[1]):
+            print 'WARNING: got nan %s' % y.mean_errors
+            sys.exit()
+            continue
     result = misc.result_string(hp, y)
     misc.append_to_file(result_txt, result)
-
+    #clean up
+    del model
+    del x
+    del y
+    try:
+        os.remove(bestnet)
+    except:
+        print 'ERROR in removing model/bestnet'

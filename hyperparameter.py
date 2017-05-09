@@ -152,7 +152,7 @@ class RandomHyperPar():
         self.lr = 10**(-uniform(2.5,3.5))
         self.dropout = 10**(-uniform(2.0,0.45))
         self.batch = randint(300,1500)
-        self.layers = randint(2,7)
+        self.layers = randint(2,4)
         self.neurons = randint(50,500)
    
         
@@ -187,11 +187,15 @@ class RandomHyperPar():
         prob = [randint(0,1) for p in range(10)]
 
         #same for optimizer
-        if randint(0,10) < 2: #have not rly used sgd, so try only few
+        if randint(0,10) < 0: #have not rly used sgd, so try only few
             self.opt= 'sgd'
-            self.lr *= 5
+            self.lr *= 7 #often, the lr is much too small
         else:    
             self.opt= 'nadam'
+            #beta_1=0.9, beta_2=0.999 standard values
+            self.beta_1 = uniform(0.5, 0.99)
+            self.beta_2 = uniform(0.99, 0.9999)
+
 
         #kernel initializer
         if randint(0,10) < 9: #i find glorot works better, so try more
@@ -200,11 +204,12 @@ class RandomHyperPar():
             self.init = 'normal'
 
         #activation function
-        #tanh never works... atm only RELU
-        if randint(0,10) < 9:
+        #tanh never works well... atm only RELU's
+        #try ELU? exponential linear unit
+        if randint(0,10) < 10:
             self.act = 'LReLU'
-            self.alpha = uniform(0.01, 0.4)
-        else:
+            self.alpha = 10**(-uniform(2, 0.46))
+        else: #this one did not seem so good?
             self.act = 'PReLU'
 
     def __str__(self):
@@ -218,14 +223,31 @@ class RandomHyperPar():
         s = ''
         hp = self.__dict__
         for value, key in zip(hp.values(), hp.keys()):
-            s += str(key) + ':' + str(value) + ','
+            s += str(key) + '?' + str(value) + ';'
         return s
 
     def dict(self):
         return self.__dict__
 
-def vary(hp):
-    hp.batch += randint(-40,40)
+    def set_(self, lr, dropout, batch, layers, neurons, opt, pp_pmssm, pp_chi2):
+        self.lr = lr
+        self.dropout = dropout
+        self.batch = batch
+        self.layers = layers
+        self.neurons = neurons
+        self.opt = opt
+        self.pp_pmssm = pp_pmssm
+        self.pp_chi2 = pp_chi2
+
+    def set(self, hp_dict):
+        for key, value in zip(hp_dict.keys(), hp_dict.values()):
+            setattr(self, key, value)
+ 
+    def vary(self):
+        self.batch += randint(-40,40)
+        self.neurons += randint(-20,20)
+        self.dropout *= uniform(0.8,1.2)
+        #TODO ADAM 
 
 #test
 #h = Hyperparameter()
