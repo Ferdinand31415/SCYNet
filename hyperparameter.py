@@ -166,7 +166,7 @@ class RandomHyperPar():
             self.pp_pmssm = ['log_norm','min_max']
         elif p == 2:
             self.pp_pmssm = ['log_norm','div_max']
-        elif p == 3
+        elif p == 3:
             self.pp_pmssm = ['min_max']
         elif p == 4:
             self.pp_pmssm = ['sub_mean_div_std','div_max']
@@ -189,6 +189,7 @@ class RandomHyperPar():
         #same for optimizer
         if randint(0,10) < 2: #have not rly used sgd, so try only few
             self.opt= 'sgd'
+            self.lr *= 5
         else:    
             self.opt= 'nadam'
 
@@ -223,6 +224,8 @@ class RandomHyperPar():
     def dict(self):
         return self.__dict__
 
+def vary(hp):
+    hp.batch += randint(-40,40)
 
 #test
 #h = Hyperparameter()

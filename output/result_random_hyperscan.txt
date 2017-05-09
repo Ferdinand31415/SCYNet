@@ -1,0 +1,1 @@
+layers:4,opt:nadam,alpha:0.254542823009,pp_chi2:['square_cut', 'div_max'],dropout:0.0154088539151,batch:1407,init:glorot_uniform,neurons:148,lr:0.00127526114559,act:LReLU,pp_pmssm:['sub_mean_div_std', 'min_max'],chi2trafo:{'maxi': 100.0},error:[3.2859526767566671, 3.4201254365793923]

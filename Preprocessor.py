@@ -116,7 +116,7 @@ class chi2:
         self.maxi = max(self.chi2)
         self.chi2 = (self.chi2 - self.mini)/(self.maxi - self.mini)
         self.back.append('max_min')
-        self.back_info.append({'mini':self.mini, 'maxi':self.maxi})
+        self.back_info.update({'mini':self.mini, 'maxi':self.maxi})
     def max_min(self, chi2):
         return (self.maxi - self.mini)*chi2 + self.mini
 

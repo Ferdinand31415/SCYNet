@@ -44,11 +44,16 @@ def build_Sequential(hp):
 
 def build_Sequential_RH(hp):
     model = Sequential()
+
+    #input layer
     model.add(Dense(hp.neurons, input_dim=11,\
                     kernel_initializer=hp.init))
-    model.add(Activation(hp.act))
+    model.add(Activation('linear'))
+    if hp.act == 'LReLU':
+        model.add(LeakyReLU(alpha=hp.alpha))
+    elif hp.act == 'PReLU':
+        model.add(PReLU())# same as LReLU, but learns alpha
 
-   
     #hidden layers
     for i in range(1, hp.layers): #skipping first!
         model.add(Dense(hp.neurons,\

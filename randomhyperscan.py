@@ -1,10 +1,11 @@
 import sys
 import numpy as np
+from time import time
 
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
-from keras.regularizers import l2
-from keras.optimizers import SGD, Adam, Nadam, Adagrad
+#from keras.models import Sequential
+#from keras.layers import Dense, Activation, Dropout
+#from keras.regularizers import l2
+#from keras.optimizers import SGD, Adam, Nadam, Adagrad
 #from keras.layers.normalization import BatchNormalization
 from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 import keras.backend as K
@@ -15,11 +16,12 @@ from netbuilder import build_Sequential_RH, build_Optimizer_RH
 from hyperparameter import RandomHyperPar
 
 #config
-result_txt = str(sys.argv[1])
-N = int(sys.argv[2])
+result_txt = 'output/result_random_hyperscan.txt'#str(sys.argv[1])
+N = int(sys.argv[1])
 split = 0.7
 initial_patience = 20
-bestnet = 'output/best.h5'
+lr_divisor = 5.0
+bestnet = 'output/temp_%s_best.h5' % time() #now this process has a unique temporary best net
 histos = []
 
 #pmssm
@@ -52,11 +54,11 @@ for i in range(N):
     if misc.bad_loss(first_rounds):
         print 'quitting because loss too high %s' % first_rounds.history
         result = misc.result_string(hp, y, earlyquit=True)
-        misc.add_to_file(result_txt, result)
+        misc.append_to_file(result_txt, result)
         continue
 
     counter = 0 
-    while lr > 10**(-7.1):
+    while lr > 10**(-6.05):
         counter += 1
 
         #learning utility
@@ -65,11 +67,11 @@ for i in range(N):
         early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
         history = History()
 
-        model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=400, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
+        model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=hp.batch, verbose=1, callbacks=[history,early_stopping,modcp])
         model.load_weights(bestnet)
-        lr /= 5.0
+        lr /= lr_divisor
         K.set_value(model.optimizer.lr, lr)
-        print '\n\nNEW LEARNING RATE:', lr, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
+        print '\n\nNEW LEARNING RATE:', lr#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
         histos.append(history)
         if misc.quit_early(histos):
             break #result of run will get saved below!
@@ -78,5 +80,5 @@ for i in range(N):
     model.load_weights(bestnet)
     y.evaluation(x, model) #is needed for getting mean_errs 
     result = misc.result_string(hp, y)
-    misc.add_to_file(result_txt, result)
+    misc.append_to_file(result_txt, result)
 

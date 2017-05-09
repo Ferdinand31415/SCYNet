@@ -1,9 +1,10 @@
 import numpy as np
+import os
 
-def write_to_file(path, result, lockfile):
+def append_to_file(path, result, lockfile='output/lock'):
     '''has inbuilt protection agains 
     several processes writing to it.
-    But make sure all processes have the same lockfile'''
+    But make sure all processes know the same lockfile'''
     while True:
         try:
             os.mknod(lockfile)
@@ -50,7 +51,7 @@ def quit_early(histos):
     return almost_no_improvement(histos)\
         or bad_loss_anywhere(histos)
 
-def result_string(hp, y, earlyquit=False)
+def result_string(hp, y, earlyquit=False):
     '''save this to a txt file. its the result of the hyperrandomscan'''
     res = hp.string()
     res += 'chi2trafo:'+str(y.back_info)+','
@@ -128,9 +129,10 @@ def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
     return x_train, x_test, y_train, y_test
 
 def patience_reduction(patience, lr_epoch):
-    return max(5, int(patience/(lr_epoch)**(0.5))
+    return max(5, int(patience/lr_epoch**(0.5)))
 
-'''
+"""
+
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.66, patience=13, min_lr=10**(-6.0), verbose=1)
 
 opt = Nadam(lr=10**(-2.8), beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=0)
@@ -151,4 +153,6 @@ while learnrate > 10**(-7.1):
 	model.load_weights('bestnet.hdf5')
 	learnrate /= 4
 	print 'learnrate:', learnrate
-'''
+
+
+"""
