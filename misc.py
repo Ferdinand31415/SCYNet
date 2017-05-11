@@ -28,7 +28,7 @@ def smart_start(x, y, model, batch):
             epochs=3, batch_size=batch, verbose=1,\
             callbacks=[history,early_stopping,modcp])
 
-def bad_loss(first_rounds, maxloss=0.6):
+def bad_loss(first_rounds, maxloss=0.4):
     '''test if bad loss is present, abort training if true'''
     loss = first_rounds.history['val_loss'][0]
     if loss > maxloss or np.isnan(loss) or np.isinf(loss):
@@ -51,10 +51,11 @@ def quit_early(histos):
     return almost_no_improvement(histos)\
         or bad_loss_anywhere(histos)
 
-def result_string(hp, y, earlyquit=False):
+def result_string(hp, xback_info, y, earlyquit=False):
     '''save this to a txt file. its the result of the hyperrandomscan'''
     res = hp.string()
     res += 'chi2trafo?'+str(y.back_info)+';'
+    res += 'pmssmtrafo?'+str(xback_info)+';'
     if earlyquit:
         res += 'error?82.38'
     else:
@@ -68,7 +69,20 @@ def result_string_to_dict(line,verbose=True):
         key, value = l.split('?')
         if verbose: print key, '\t', value
         hp.update({str(key):str(value)})
+        try:
+            hp[key] = eval(hp[key])
+        except NameError:
+            pass
     return hp
+
+def load_result_file(path):
+    data = []
+    with open(path,'r') as file:
+        lines = file.readlines()
+    for l in lines:
+        data.append(result_string_to_dict(l,verbose=False))
+    return data
+
 
 def almost_no_improvement(histos, improvefrac = 0.04):
     '''returns true if almost no improvement at all even though

@@ -6,9 +6,9 @@ import sys
 
 class SCYNet:
     '''generate a fast chi2 prediction for pmssm points'''
-    def __init__(self, mask=[0,100], output='output/SCYNet.out'):
-        self.mask = mask #if one wants to exclude certain chi2 from getting written to output.
-        #for example, mask = [60,90] will output only chi2 in this range
+    def __init__(self, masks=[[0,100]], output='output/SCYNet.out'):
+        self.masks = masks #if one wants to exclude certain chi2 from getting written to output.
+        #for example, masks = [[60,90],[91,92]] will output only chi2 in this ranges
         self.output = output #name of file to give results
         self.model = load_model('SCYNet.h5') #generate keras model
         #self.y = chi2(data=None, preproc=[100,25], params=None, split=1)
@@ -84,25 +84,27 @@ class SCYNet:
     def write_output(self, mode='all'):
         '''writes output to file'''
         chi_squared = deepcopy(self.pred)
-        mask = (chi_squared >= self.mask[0]) == (chi_squared <= self.mask[1])
-        chi_squared = chi_squared[mask]
-    
-        if mode == 'chi2_only':
-            with open(self.output, 'w') as file:#destroys any existing result_file
-                for i in range(len(chi_squared)):
-                    file.write(str(chi_squared[i]) + '\n')
-        elif mode == 'all':
-             with open(self.output, 'w') as file:#destroys any existing result_file
-                for i in range(len(chi_squared)):
-                    line=' '.join(map(str, self.data[mask][i]))+' '+str(chi_squared[i])+'\n'
-                    file.write(line)
-        elif mode == 'pmssm_only':
-             with open(self.output, 'w') as file:#destroys any existing result_file
-                for i in range(len(chi_squared)):
-                    line=' '.join(map(str, self.data[mask][i]))+'\n'
-                    file.write(line)
- 
-            
+        for m in self.masks:
+            mask = (chi_squared >= m[0]) == (chi_squared <= m[1])
+            chi_squared = chi_squared[mask]
+        
+            if mode == 'chi2_only':
+                with open(self.output, 'a') as file:
+                    for i in range(len(chi_squared)):
+                        file.write(str(chi_squared[i]) + '\n')
+            elif mode == 'all':
+                 with open(self.output, 'a') as file:
+                    for i in range(len(chi_squared)):
+                        line=' '.join(map(str, self.data[mask][i]))+' '+str(chi_squared[i])+'\n'
+                        file.write(line)
+            elif mode == 'pmssm_only':
+                 with open(self.output, 'a') as file:
+                    for i in range(len(chi_squared)):
+                        line=' '.join(map(str, self.data[mask][i]))+'\n'
+                        file.write(line)
+     
+    def needfunctionthatgivesonlythosepmssmpointswhicharestillneeded:
+        pass          
 
 
 if __name__ == '__main__':

@@ -25,15 +25,19 @@ class pmssm:
         self.x = data
         self.split = int(split*len(self.x))
         self.preproc = preproc
+        self.back_info = {}
         self.preprocess() 
 
     def sub_mean_div_std(self):
         self.mod = np.zeros((11,2))
+        backinfo = []
         for i in range(self.x.shape[1]):
             mean = self.x[:,i].mean()
             std = self.x[:,i].std()
             self.x[:,i] = (self.x[:,i] - mean) / std
             self.mod[i] = [mean, std]
+            backinfo.append([mean, std])
+        self.back_info.update({'sub_mean_div_std:meanstd':backinfo})
 
     def div_max(self):
         '''divide by maximum'''
@@ -42,27 +46,34 @@ class pmssm:
             maxi = max(abs(self.x[:,i]))
             self.x[:,i] /= maxi 
             self.maxis[i] = maxi
+        self.back_info.update({'div_max:maxi':list(self.maxis)})
 
     def min_max(self):
         '''normalize between zero and one'''
         self.minmaxis = np.zeros((11,2))
+        mimaxis = []
         for i in range(self.x.shape[1]):
             mini = min(self.x[:,i])
             maxi = max(self.x[:,i])
             self.minmaxis[i] = [mini, maxi]
+            mimaxis.append([mini,maxi])
             self.x[:,i] = (self.x[:,i] - mini) / (maxi - mini)
+        self.back_info.update({'min_max:minimaxi':mimaxis})        
 
     def log_norm(self):
         '''scale by log'''
         self.logis = np.zeros(11)
         for i in range(self.x.shape[1]):
             p = self.x[:,i]
+            mini = min(p)
             mask = p < 0
             p[mask] *= -1
-            p = np.log(p - min(p) + 2) #+2 regularizes, we want no log(0)
-            self.logis[i] = min(p)
+            p = np.log(p - mini + 2) #+2 regularizes, we want no log(0)
+            self.logis[i] = mini
+            #print 'logis', i, self.logis[i], mini, p[:10]
             p[mask] *= -1
             self.x[:,i] = p
+        self.back_info.update({'log_norm:logis':list(self.logis)})
 
     def split_train_data(self):
         '''simple split function'''

@@ -148,13 +148,16 @@ class Hyperparameter():
 
 from random import uniform, randint
 class RandomHyperPar():
-    def __init__(self):
+    def __init__(self, fasttrain=False):
         self.lr = 10**(-uniform(2.5,3.5))
         self.dropout = 10**(-uniform(2.0,0.45))
         self.batch = randint(300,1500)
-        self.layers = randint(2,4)
-        self.neurons = randint(50,500)
-   
+        self.layers = randint(2,5)
+        self.neurons = randint(150,600)
+        if fasttrain:
+            self.layers = randint(1,3)
+            self.neurons = randint(20,80)
+
         
         #probability for choosing different types
         #of preprocessing for the pmssm
@@ -198,7 +201,7 @@ class RandomHyperPar():
 
 
         #kernel initializer
-        if randint(0,10) < 9: #i find glorot works better, so try more
+        if randint(0,10) < 6:
             self.init = 'glorot_uniform'
         else:
             self.init = 'normal'

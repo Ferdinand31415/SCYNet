@@ -26,12 +26,12 @@ histos = []
 
 #pmssm
 from Preprocessor import pmssm, chi2, fulldata
-data = fulldata()
+#data = fulldata()
 
 
 #main hyperloop
 for i in range(N):
-    hp = RandomHyperPar()
+    hp = RandomHyperPar(fasttrain=True)
     print '\niteration=%s\n' % i
     print hp
     #build model according to hp
@@ -41,9 +41,10 @@ for i in range(N):
     model.compile(loss='mae', optimizer=opt) #, metrics=[mean_loss_chi2])
 
     #shuffle data, so we dont learn hyperparameters for a certain validation set
+    data = fulldata()
     data.shuffle()
     x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
-    y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split,verbose=True)
+    y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split,verbose=False)
 
     modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
@@ -53,16 +54,18 @@ for i in range(N):
     model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[first_rounds])
     if misc.bad_loss(first_rounds):
         print 'quitting because loss too high %s' % first_rounds.history
-        result = misc.result_string(hp, y, earlyquit=True)
+        result = misc.result_string(hp, x.back_info, y, earlyquit=True)
         misc.append_to_file(result_txt, result)
         continue
 
     lr_epoch = 0 
-    while lr > hp.lr/5:#10**(-3.05):
+    while lr_epoch <= 2:#10**(-3.05):
+    #TODO put lr_epoch > 3 or something?
+        print '\n\nLEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
         lr_epoch += 1
 
         #learning utility
-        patience = max(2, int(initial_patience/(lr_epoch)**(0.5))) #patience decrease 
+        patience = max(2, int(initial_patience/(lr_epoch)**(1.2))) #patience decrease 
         #No more huge gains expected after we have reduced lr several times. we want to save computation time
         early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
         history = History()
@@ -71,7 +74,6 @@ for i in range(N):
         model.load_weights(bestnet)
         lr /= lr_divisor
         K.set_value(model.optimizer.lr, lr)
-        print '\n\nNEW LEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
         histos.append(history)
         if misc.quit_early(histos):
             break #result of run will get saved below!
@@ -84,13 +86,15 @@ for i in range(N):
             print 'WARNING: got nan %s' % y.mean_errors
             sys.exit()
             continue
-    result = misc.result_string(hp, y)
+    result = misc.result_string(hp, x.back_info, y)
     misc.append_to_file(result_txt, result)
     #clean up
-    del model
-    del x
-    del y
     try:
         os.remove(bestnet)
     except:
         print 'ERROR in removing model/bestnet'
+        sys.exit()
+    del model
+    del x
+    del y
+ 
