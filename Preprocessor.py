@@ -12,7 +12,8 @@ def shuffle_data(x, y):
 class fulldata:
     def __init__(self, path = os.environ['HOME'] + '/13TeV_chi2_disjoint_2'):
         self.path = path
-        self.data = np.genfromtxt(self.path)[:,1:]
+        #self.data = np.genfromtxt(self.path)[:,1:]
+        self.data = np.load(self.path+'.npy')
         #print 'loaded pmssm11 data with shape', self.data.shape   
         
     def shuffle(self):

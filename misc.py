@@ -61,12 +61,12 @@ def result_string(hp, y, earlyquit=False):
         res += 'error?'+str(y.mean_errors['0.0-100.0'])
     return res + '\n'
 
-def result_string_to_dict(line):
+def result_string_to_dict(line,verbose=True):
     hp = {}
     L = line.split(';')
     for l in L:
         key, value = l.split('?')
-        print key, '\t', value
+        if verbose: print key, '\t', value
         hp.update({str(key):str(value)})
     return hp
 
