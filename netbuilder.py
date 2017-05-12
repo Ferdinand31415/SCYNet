@@ -46,7 +46,7 @@ def build_Sequential_RH(hp):
     model = Sequential()
 
     #input layer
-    model.add(Dense(hp.neurons, input_dim=11,\
+    model.add(Dense(hp.neurons[0], input_dim=11,\
                     kernel_initializer=hp.init))
     model.add(Activation('linear'))
     if hp.act == 'LReLU':
@@ -56,7 +56,7 @@ def build_Sequential_RH(hp):
 
     #hidden layers
     for i in range(1, hp.layers): #skipping first!
-        model.add(Dense(hp.neurons,\
+        model.add(Dense(hp.neurons[i],\
                         kernel_initializer=hp.init))
         model.add(Dropout(hp.dropout))
         model.add(Activation('linear'))

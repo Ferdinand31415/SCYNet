@@ -149,15 +149,31 @@ class Hyperparameter():
 from random import uniform, randint
 class RandomHyperPar():
     def __init__(self, fasttrain=False):
-        self.lr = 10**(-uniform(2.5,3.5))
-        self.dropout = 10**(-uniform(2.0,0.45))
-        self.batch = randint(300,1500)
-        self.layers = randint(2,5)
-        self.neurons = randint(150,600)
-        if fasttrain:
-            self.layers = randint(1,3)
-            self.neurons = randint(20,80)
+        self.lr = 10**(-uniform(2.5,3.8))
+        self.dropout = 10**(-uniform(2.0,1.0))#0.45
+        self.batch = randint(500,2500)
+        self.layers = randint(2,6)
 
+        neurons_low, neurons_high = 150, 400
+        if self.layers == 2:
+            self.neurons = 2*[randint(neurons_low, neurons_high)]
+        else:
+            if randint(0,10) < 6:
+               #block architecture
+               self.neurons = self.layers*[randint(neurons_low, neurons_high)]
+            else:
+                #getting bigger and smaller!
+                switch = randint(2,self.layers-1)
+                self.neurons = self.layers*[0]
+                self.neurons[0] = randint(neurons_low, int(neurons_high/2))
+                for i in range(1,switch):
+                    self.neurons[i] = int(min(neurons_high,uniform(1.1,1.5)*self.neurons[i-1]))
+                for i in range(switch, self.layers):
+                    self.neurons[i] = int(max(neurons_low,self.neurons[i-1]/uniform(1.1,1.5)))
+        if fasttrain:
+            self.layers = randint(2,3)
+            self.neurons = self.layers*[randint(20,80)]
+            #____
         
         #probability for choosing different types
         #of preprocessing for the pmssm

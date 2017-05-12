@@ -1,7 +1,8 @@
 import numpy as np
+import time
 import os
 
-def append_to_file(path, result, lockfile='output/lock'):
+def append_to_file(path, result, lockfile='lock'):
     '''has inbuilt protection agains 
     several processes writing to it.
     But make sure all processes know the same lockfile'''
@@ -58,9 +59,9 @@ def result_string(hp, xback_info, y, initialpatience, earlyquit=False):
     res += 'chi2trafo?'+str(y.back_info)+';'
     res += 'pmssmtrafo?'+str(xback_info)+';'
     if earlyquit:
-        res += 'error?82.38'
+        res += 'error?10.0'
     else:
-        res += 'error?'+str(y.mean_errors['0.0-100.0'])
+        res += 'error?'+str(y.mean_errors['0.0-100.0'][1])
     return res + '\n'
 
 def load_result_file(path):
@@ -80,6 +81,16 @@ def get_global_best(data):
         if err < best:
             best = err
     return best
+
+def savemod(model, x, y):
+    err = y.mean_errors['0.0-100.0'][1]
+    directory = os.environ['HOME'] + '/resultSCYNet/nets/%s' % err
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    model.save(directory + '/model_%s.h5' % err)
+    with open(directory + '/model_%s.txt' % err,'a') as f:
+        f.write(str(x.back_info)+'\n')
+        f.write(str(y.back_info)+'\n')
 
 def result_string_to_dict(line,verbose=True):
     hp = {}

@@ -213,7 +213,7 @@ class chi2:
                 chi2 += chi2_mod + (l-len(chi2_mod))*' '
                 train += train_mod + (l-len(train_mod))*' '
                 test += test_mod +(l-len(test_mod))*' '
-    
+        self.err = self.mean_errors['0.0-100.0'][1] 
         print '\n' + chi2
         print deco
         print train
