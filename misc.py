@@ -51,9 +51,10 @@ def quit_early(histos):
     return almost_no_improvement(histos)\
         or bad_loss_anywhere(histos)
 
-def result_string(hp, xback_info, y, earlyquit=False):
+def result_string(hp, xback_info, y, initialpatience, earlyquit=False):
     '''save this to a txt file. its the result of the hyperrandomscan'''
     res = hp.string()
+    res += 'initialpatience?'+str(initialpatience)+';'
     res += 'chi2trafo?'+str(y.back_info)+';'
     res += 'pmssmtrafo?'+str(xback_info)+';'
     if earlyquit:
@@ -61,6 +62,24 @@ def result_string(hp, xback_info, y, earlyquit=False):
     else:
         res += 'error?'+str(y.mean_errors['0.0-100.0'])
     return res + '\n'
+
+def load_result_file(path):
+    data = []
+    with open(path,'r') as file:
+        lines = file.readlines()
+    for l in lines:
+        data.append(result_string_to_dict(l,verbose=False))
+    return data
+
+def get_global_best(data):
+    best = 100
+    if len(data) == 0:
+        return best
+    for d in data:
+        err = get_error(d['error'])
+        if err < best:
+            best = err
+    return best
 
 def result_string_to_dict(line,verbose=True):
     hp = {}
@@ -108,10 +127,10 @@ def mae_poisson(stat_error):
     return loss
 
 from keras.callbacks import EarlyStopping
-class VeryEarlyStopper(EarlyStopping):
+class CustomEarlyStopper(EarlyStopping):
     '''was intended to stop training if loss is too high. but i dont use it'''
     def __init__(self, patience=4):
-        super(troll, self).__init__()
+        super(CustomEarlyStopper, self).__init__()
         self.patience=patience
 
     def on_epoch_end(self, epoch, logs=None):
@@ -153,6 +172,13 @@ def only_small_chi2(path='/home/fe918130/13TeV_chi2_disjoint_2',split=0.8):
 
 def patience_reduction(patience, lr_epoch):
     return max(5, int(patience/lr_epoch**(0.5)))
+
+def get_error(error):
+    if type(error) is list:
+        return error[1] #index [0,1] is [train,test]
+    else:
+        return error
+
 
 """
 

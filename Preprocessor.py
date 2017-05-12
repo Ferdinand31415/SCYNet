@@ -73,7 +73,7 @@ class pmssm:
             #print 'logis', i, self.logis[i], mini, p[:10]
             p[mask] *= -1
             self.x[:,i] = p
-        self.back_info.update({'log_norm:logis':list(self.logis)})
+        self.back_info.update({'log_norm:minis':list(self.logis)})
 
     def split_train_data(self):
         '''simple split function'''

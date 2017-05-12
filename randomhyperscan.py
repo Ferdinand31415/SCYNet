@@ -1,35 +1,43 @@
-import sys
+#general
+import sys, os
 import numpy as np
 from time import time
 
-#from keras.models import Sequential
-#from keras.layers import Dense, Activation, Dropout
-#from keras.regularizers import l2
-#from keras.optimizers import SGD, Adam, Nadam, Adagrad
-#from keras.layers.normalization import BatchNormalization
-from keras.callbacks import History, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+#Keras
+from keras.callbacks import History, ModelCheckpoint, EarlyStopping
 import keras.backend as K
 
 #own scripts
 import misc
 from netbuilder import build_Sequential_RH, build_Optimizer_RH
 from hyperparameter import RandomHyperPar
+from Preprocessor import pmssm, chi2, fulldata
 
-#config
-result_txt = 'output/result_random_hyperscan.txt'#str(sys.argv[1])
+####################
+#config the hp scan#
+####################
 N = 10000#int(sys.argv[1])
 split = 0.7
 initial_patience = 2
+patience_dec = 1.2
 lr_divisor = 20.0
-bestnet = 'output/temp_%s_best.h5' % time() #now this process has a unique temporary best net
+resultfolder = os.onviron['HOME']+'/resultSCYNet'
+bestnet = resultfolder + '/temp/%s_best.h5' % time() #instance of this script has a unique temporary best net
+result_txt = resultfolder + '/randhyperscan_initpat_%s_lrdivisor_%s_patdec_%s_split_%s' % \
+            (initial_patience, lr_divisor, patience_dec, split)
+if not os.path.isfile(result_txt):
+    os.mknod(result_txt)
+
+#results = load_result_file(result_txt)
+#best = get_global_best(results)
+#del results
+
 histos = []
 
-#pmssm
-from Preprocessor import pmssm, chi2, fulldata
-#data = fulldata()
 
-
-#main hyperloop
+################
+#main hyperloop#
+################
 for i in range(N):
     hp = RandomHyperPar(fasttrain=True)
     print '\niteration=%s\n' % i
@@ -54,18 +62,17 @@ for i in range(N):
     model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[first_rounds])
     if misc.bad_loss(first_rounds):
         print 'quitting because loss too high %s' % first_rounds.history
-        result = misc.result_string(hp, x.back_info, y, earlyquit=True)
+        result = misc.result_string(hp, x.back_info, y, initial_patience, earlyquit=True)
         misc.append_to_file(result_txt, result)
         continue
 
     lr_epoch = 0 
-    while lr_epoch <= 2:#10**(-3.05):
-    #TODO put lr_epoch > 3 or something?
+    while lr_epoch <= 6
         print '\n\nLEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
         lr_epoch += 1
 
         #learning utility
-        patience = max(2, int(initial_patience/(lr_epoch)**(1.2))) #patience decrease 
+        patience = max(2, int(initial_patience/(lr_epoch)**(patience_dec))) #patience decrease 
         #No more huge gains expected after we have reduced lr several times. we want to save computation time
         early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
         history = History()
@@ -86,7 +93,7 @@ for i in range(N):
             print 'WARNING: got nan %s' % y.mean_errors
             sys.exit()
             continue
-    result = misc.result_string(hp, x.back_info, y)
+    result = misc.result_string(hp, x.back_info, y, initial_patience)
     misc.append_to_file(result_txt, result)
     #clean up
     try:

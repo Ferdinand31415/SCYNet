@@ -10,14 +10,6 @@ basic_path = os.getcwd()
 
 #from misc import result_string_to_dict #tensorflow import takes so long
 path ='output/result_random_hyperscan.txt'
-def load_result_file(path):
-    data = []
-    with open(path,'r') as file:
-        lines = file.readlines()
-    for l in lines:
-        data.append(result_string_to_dict(l,verbose=False))
-    return data
-
 def result_string_to_dict(line,verbose=True):
     hp = {}
     L = line.split(';')
@@ -27,12 +19,6 @@ def result_string_to_dict(line,verbose=True):
         hp.update({str(key):str(value)})
     return hp
 
-
-def get_error(error):
-    if '[' in error and ']' in error:
-        return eval(error[:-1])[1]  #:-1 gets rid of '\n'. [0,1] -> [train,test]
-    else:
-        return float(error[:-1])
 
 data = load_result_file(path)
 print 'hyperpars scanned:%s' % len(data)
