@@ -1,0 +1,41 @@
+Sender: LSF System <lsfadmin@linuxbmc1193>
+Subject: Job 37638572: <Job_with_no_name> in cluster <rcc> Done
+
+Job <Job_with_no_name> was submitted from host <cluster> by user <fe918130> in cluster <rcc>.
+Job was executed on host(s) <linuxbmc1193>, in queue <normal>, as user <fe918130> in cluster <rcc>.
+</home/fe918130> was used as the home directory.
+</home/fe918130/SCYNet> was used as the working directory.
+Started at Thu May 11 11:54:22 2017
+Results reported on Thu May 11 11:54:25 2017
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+cd /home/fe918130/SCYNet
+bsub < submit_randhpscan_aachen_0.sh
+bsub < submit_randhpscan_aachen_1.sh
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   2.49 sec.
+    Max Memory :                                 32 MB
+    Average Memory :                             9.00 MB
+    Total Requested Memory :                     512.00 MB
+    Delta Memory :                               480.00 MB
+    Max Swap :                                   -
+    Max Processes :                              2
+    Max Threads :                                2
+    Run time :                                   3 sec.
+    Turnaround time :                            8 sec.
+
+The output (if any) follows:
+
+Info: Set job to run exclusive.
+Job <37638585> is submitted to queue <gpu>.
+Info: Set job to run exclusive.
+Job <37638586> is submitted to queue <gpu>.

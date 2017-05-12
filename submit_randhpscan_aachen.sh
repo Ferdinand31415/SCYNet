@@ -1,19 +1,19 @@
 #!/usr/bin/bash
  
 ### Job name
-#BSUB -J GPUTEST
+#BSUB -J randhyperscan
  
 ### File / path where STDOUT & STDERR will be written
 ###    %J is the job ID, %I is the array ID
-#BSUB -o /home/fe918130/test/gpu_test.%J.%I
+#BSUB -o /home/fe918130/shelloutputs/randhyperscan.%J.%I
  
 ### Request the time you need for execution in minutes
 ### The format for the parameter is: [hour:]minute,
 ### that means for 80 minutes you could also use this: 1:20
-#BSUB -W 15
+#BSUB -W 240
  
 ### Request memory you need for your job in TOTAL in MB
-#BSUB -M 2048 
+#BSUB -M 6000
 #####1024
 
 
@@ -34,9 +34,9 @@ export LD_LIBRARY_PATH=$HOME/cuda/lib64:$LD_LIBRARY_PATH
 ### Change to the work directory
 cd /home/fe918130/SCYNET
 export CUDA_VISIBLE_DEVICES=1
-python pmssm.py &
+python randhyperscan_singleepochs.py &
 
 export CUDA_VISIBLE_DEVICES=0
-python pmssm.py &
+python randhyperscan_singleepochs.py &
 
 echo "done!"

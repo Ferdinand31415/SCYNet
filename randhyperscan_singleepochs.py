@@ -25,7 +25,7 @@ from Preprocessor import pmssm, chi2, fulldata
 #config the hp scan#
 ####################
 N = 100#int(sys.argv[1])
-split = 0.8
+split = 0.9
 initial_patience = 65
 patience_dec = 0.5#decreases patience . patience -> initial_patience / (lr_epoch)**patience_dec
 lr_divisor = 4.0 #we divide each lr epoch by this number
