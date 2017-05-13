@@ -219,6 +219,33 @@ class chi2:
         print train
         print test + '\n'
 
+###############################
+# preprocessing for SCYNet.py #
+###############################
+def sub_mean_div_std(data, smds):
+    for i in range(data.shape[1]):
+        mean, std = smds[i]
+        data[:,i] = (data[:,i] - mean)/std
+    return data
+def log_norm(data, logis):
+    for i in range(data.shape[1]):
+        p = data[:,i]
+        mask = p < 0
+        p[mask] *= -1
+        p= np.log(p - logis[i] + 2)
+        p[mask] *= -1
+        data[:,i] = p
+    return data
+def div_max(data, maxis):
+    for i in range(data.shape[1]):
+        data[:,i] /= maxis[i]
+def min_max(data, minmaxis):
+    for i in range(data.shape[1]):
+        mini, maxi = minmaxis[i]
+        data[:,i] = (data[:,i] - mini)/(maxi - mini)
+    return data
+
+
 ''' 
 y = chi2(['square_cut','div_max'], [100,25], split=7.0/8)
 

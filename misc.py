@@ -222,5 +222,18 @@ while learnrate > 10**(-7.1):
 	learnrate /= 4
 	print 'learnrate:', learnrate
 
+def load_json_model(self, name='SCYNet'):
+    '''generates a keras neural net model'''
+    # load json and create model
+    json_file = open('%s.json' % name, 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    loaded_model = model_from_json(loaded_model_json)
+    # load weights into new model
+    loaded_model.load_weights("%s.h5" % name)
+    print("Loaded model %s from disk" % name)
+    self.model = loaded_model
+    return loaded_model
+
 
 """

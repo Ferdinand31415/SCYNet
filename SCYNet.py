@@ -1,38 +1,19 @@
 from copy import deepcopy
-from Preprocessor import pmssm, chi2
+from Preprocessor import pmssm, chi2, log_norm, div_max, min_max, sub_mean_div_std
 from keras.models import model_from_json, load_model
+import misc
 import numpy as np
 import sys
 
 class SCYNet:
     '''generate a fast chi2 prediction for pmssm points'''
-    def __init__(self, masks=[[0,100]], output='output/SCYNet.out'):
+    def __init__(self, masks=[[0,100]], output='output/SCYNet.out', model='SCYNET.h5', hp='hyperpoint.txt'):
         self.masks = masks #if one wants to exclude certain chi2 from getting written to output.
         #for example, masks = [[60,90],[91,92]] will output only chi2 in this ranges
-        self.output = output #name of file to give results
-        self.model = load_model('SCYNet.h5') #generate keras model
-        #self.y = chi2(data=None, preproc=[100,25], params=None, split=1)
-
-    def load_json_model(self, name='SCYNet'):
-        '''generates a keras neural net model'''
-        # load json and create model
-        json_file = open('%s.json' % name, 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
-        # load weights into new model
-        loaded_model.load_weights("%s.h5" % name)
-        print("Loaded model %s from disk" % name)
-        self.model = loaded_model
-        return loaded_model
-
-    def preprocess(self):
-        '''preprocesses pmssm 11 data like it has been done
-        in the training phase'''
-        self.maxis = np.load('preprocess_info.npy')
-        self.pp_data = deepcopy(self.data)
-        for i in range(11):
-            self.pp_data[:,i] /= self.maxis[i]
+        self.outputfile = output #name of file to write results
+        self.model = load_model(model) #generate keras model
+        self.hp = misc.load_result_file(hp)[0] #hyperparameter+information on the preprocessing. we need this to apply to the input pmssm the user gives.
+        self.verbose = True
 
     def predict(self, data=None):
         if data == None:
@@ -47,7 +28,21 @@ class SCYNet:
         self.pred = self.pred.flatten()
         return self.backtransform_chi2() #need to backtransform chi2 into 0..100 range
 
+    def preprocess(self):
+        '''preprocesses the p11mssm points in exactly the same way done for the net as it was trained'''
+        if self.verbose:
+            for k,v in zip(hp.keys(), hp.values())
+                print k,v
+        self.pp_data = deepcopy(self.data)
+        for func in self.hp['pp_pmssm']:
+            if self.verbose: print 'func:',func
+            preproc_info = self.hp['pmssmtrafo'][func]
+            if self.verbose: print 'preproc_info', preproc_info
+            self.pp_data = eval(func)(self.pp_data, preproc_info)
+       
     def backtransform_chi2(self):
+        '''backtransforms chi2'''
+
         #1. mult_max
         self.pred *= 100
         #2. back_square
@@ -63,10 +58,10 @@ class SCYNet:
         '''data must be of type np array'''
         if isinstance(data, np.ndarray) and data.shape[1] == 11:
             self.data = data
-            self.preprocess()
         else:
             raise Exception('method set_data must get np array as argument and have Shape (N,11)')
-    
+        self.preprocess()
+   
     def read_data(self, inputfile):
         '''reading in the data. test if numpy file ('something.npy') or txtfile'''
         try:
@@ -80,7 +75,7 @@ class SCYNet:
         if self.data.shape[1] != 11:
             raise ValueError('data has wrong shape, shape=%s' % self.data.shape)
         self.preprocess()
-        
+
     def write_output(self, mode='all'):
         '''writes output to file'''
         chi_squared = deepcopy(self.pred)
@@ -89,16 +84,16 @@ class SCYNet:
             chi_squared = chi_squared[mask]
         
             if mode == 'chi2_only':
-                with open(self.output, 'a') as file:
+                with open(self.outputfile, 'a') as file:
                     for i in range(len(chi_squared)):
                         file.write(str(chi_squared[i]) + '\n')
             elif mode == 'all':
-                 with open(self.output, 'a') as file:
+                 with open(self.outputfile, 'a') as file:
                     for i in range(len(chi_squared)):
                         line=' '.join(map(str, self.data[mask][i]))+' '+str(chi_squared[i])+'\n'
                         file.write(line)
             elif mode == 'pmssm_only':
-                 with open(self.output, 'a') as file:
+                 with open(self.outputfile, 'a') as file:
                     for i in range(len(chi_squared)):
                         line=' '.join(map(str, self.data[mask][i]))+'\n'
                         file.write(line)

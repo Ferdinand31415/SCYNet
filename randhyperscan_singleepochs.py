@@ -144,7 +144,7 @@ try:
                         break
                         
                 #end of epoch
-                print 'epoch %s, wait %s, lr_epoch %s, patience %s, current %s, best %s' % (epoch, wait, lr_epoch, patience, current, best)
+                print 'epoch %s, wait %s, lr_epoch %s, patience %s, current %s, best %s' % (epoch, wait, lr_epoch, patience, str(current)[:6], str(best)[:7])
                 epoch += 1
 
             #prepare for new lr_epoch    
