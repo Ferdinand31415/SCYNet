@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import os
+import datetime
 
 def append_to_file(path, result, lockfile='lock'):
     '''has inbuilt protection agains 
@@ -82,15 +83,22 @@ def get_global_best(data):
             best = err
     return best
 
-def savemod(model, x, y):
+def savemod(model, x, y, hp=None):
     err = y.mean_errors['0.0-100.0'][1]
+    err = "{0:.4f}".format(err)
     directory = os.environ['HOME'] + '/resultSCYNet/nets/%s' % err
     if not os.path.exists(directory):
         os.makedirs(directory)
-    model.save(directory + '/model_%s.h5' % err)
-    with open(directory + '/model_%s.txt' % err,'a') as f:
-        f.write(str(x.back_info)+'\n')
-        f.write(str(y.back_info)+'\n')
+
+    mydate = datetime.datetime.now()
+    date = mydate.strftime("%d%b")
+    model.save(directory + '/model_%s_%s.h5' % (err, date))
+    with open(directory + '/model_%s_%s.txt' % (err, date),'a') as f:
+        if hp != None:
+            f.write(result_string(hp, x.back_info, y, 12345))
+        else:
+            f.write(str(x.back_info)+'\n')
+            f.write(str(y.back_info)+'\n')
 
 def result_string_to_dict(line,verbose=True):
     hp = {}

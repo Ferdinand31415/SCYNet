@@ -3,10 +3,13 @@ import sys, os
 
 if os.environ['LOGNAME'] == 'feiteneuer':#aachen desktop
     stop_time = 3600
+    net_name = ''
 elif os.environ['LOGNAME'] == 'fe918130':#aachen cluster
     stop_time = 30
+    net_name = ''
 elif os.environ['LOGNAME'] == 'eiteneuer':#baf cluster
     stop_time = 300
+    net_name = str(os.environ['PBS_ARRAYID'])
 import numpy as np
 import time
 
@@ -24,18 +27,20 @@ from Preprocessor import pmssm, chi2, fulldata
 ####################
 #config the hp scan#
 ####################
-N = 100#int(sys.argv[1])
+N = 200#int(sys.argv[1])
 split = 0.9
 initial_patience = 65
 patience_dec = 0.5#decreases patience . patience -> initial_patience / (lr_epoch)**patience_dec
 lr_divisor = 4.0 #we divide each lr epoch by this number
 resultfolder = os.environ['HOME']+'/resultSCYNet'
-bestnet = resultfolder + '/temp/%s_best.h5' % time.time() #instance of this script has a unique temporary best net
+bestnet = resultfolder + '/temp/%s%s_best.h5' % (time.time(), net_name) #instance of this script has a unique temporary best net
 result_txt = resultfolder + '/result_initpat_%s_patdec_%s_lrdec_%s_spl_%s' % \
             (initial_patience, lr_divisor, patience_dec, split)
 if not os.path.isfile(result_txt):
-    os.mknod(result_txt)
-
+    try:
+        os.mknod(result_txt)
+    except OSError:
+        pass
 #results = load_result_file(result_txt)
 #best = get_global_best(results)
 #del results
@@ -87,7 +92,7 @@ try:
             #wait: for checking if we are on 'loss plateau'.
             #wait_sudden_catastrophic_loss: sometimes the algorithm becomes unstable and we get huge losses. reload checkpoint then
             while wait <= patience:
-                hist = model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=1, callbacks=[history,modcp])
+                hist = model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=0, callbacks=[history,modcp])
 
                 histos.append(history)
                 current = hist.history['val_loss'][0]
@@ -139,7 +144,7 @@ try:
                         break
                         
                 #end of epoch
-                print 'lr_epoch %s, patience %s, current %s, wait %s, best %s\n' % (lr_epoch, patience, current, wait, best)
+                print 'epoch %s, wait %s, lr_epoch %s, patience %s, current %s, best %s' % (epoch, wait, lr_epoch, patience, current, best)
                 epoch += 1
 
             #prepare for new lr_epoch    
@@ -172,7 +177,7 @@ try:
                     print 'WARNING: got nan %s' % value
                     continue
             if y.err < 1.3:
-                misc.savemod(model, x, y)
+                misc.savemod(model, x, y, hp)
         result = misc.result_string(hp, x.back_info, y, initial_patience, earlyquit = stopped)
         misc.append_to_file(result_txt, result)
         #clean up

@@ -37,7 +37,7 @@ class pmssm:
             self.x[:,i] = (self.x[:,i] - mean) / std
             self.mod[i] = [mean, std]
             backinfo.append([mean, std])
-        self.back_info.update({'sub_mean_div_std:meanstd':backinfo})
+        self.back_info.update({'sub_mean_div_std':backinfo})
 
     def div_max(self):
         '''divide by maximum'''
@@ -46,7 +46,7 @@ class pmssm:
             maxi = max(abs(self.x[:,i]))
             self.x[:,i] /= maxi 
             self.maxis[i] = maxi
-        self.back_info.update({'div_max:maxi':list(self.maxis)})
+        self.back_info.update({'div_max':list(self.maxis)})
 
     def min_max(self):
         '''normalize between zero and one'''
@@ -58,7 +58,7 @@ class pmssm:
             self.minmaxis[i] = [mini, maxi]
             mimaxis.append([mini,maxi])
             self.x[:,i] = (self.x[:,i] - mini) / (maxi - mini)
-        self.back_info.update({'min_max:minimaxi':mimaxis})        
+        self.back_info.update({'min_max':mimaxis})        
 
     def log_norm(self):
         '''scale by log'''
@@ -73,7 +73,7 @@ class pmssm:
             #print 'logis', i, self.logis[i], mini, p[:10]
             p[mask] *= -1
             self.x[:,i] = p
-        self.back_info.update({'log_norm:minis':list(self.logis)})
+        self.back_info.update({'log_norm':list(self.logis)})
 
     def split_train_data(self):
         '''simple split function'''
