@@ -105,7 +105,6 @@ class chi2:
  
     '''divide chi2 by maximum'''
     def div_max(self):
-        print 'i should not be here'
         self.maximum = max(self.chi2)
         self.chi2 /= self.maximum
         self.back.append('mult_max')#training + SCYNet
