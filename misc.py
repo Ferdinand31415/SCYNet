@@ -56,13 +56,15 @@ def quit_early(histos):
 def result_string(hp, xback_info, y, initialpatience, earlyquit=False):
     '''save this to a txt file. its the result of the hyperrandomscan'''
     res = hp.string()
-    res += 'initialpatience?'+str(initialpatience)+';'
-    res += 'chi2trafo?'+str(y.back_info)+';'
-    res += 'pmssmtrafo?'+str(xback_info)+';'
+    res += 'initialpatience?'+str(initialpatience)+';'#irrelevant
+    res += 'chi2_back_info?'+str(y.back_info)+';'#parameters of the back_trafos
+    res += 'chi2_back_trafos?'+str(y.back)+';'#what functions to apply to prediction?
+    res += 'pmssm_back_info?'+str(xback_info)+';'#apply 
     if earlyquit:
-        res += 'error?10.0'
+        res += 'error?10.0' #so a comparison between the hp's becomes meaningfull.
     else:
         res += 'error?'+str(y.mean_errors['0.0-100.0'][1])
+        res += 'fullerror?'+str(y.mean_errors)
     return res + '\n'
 
 def load_result_file(path):
@@ -86,21 +88,23 @@ def get_global_best(data):
 def savemod(model, x, y, hp=None):
     err = y.mean_errors['0.0-100.0'][1]
     err = "{0:.4f}".format(err)
-    directory = os.environ['HOME'] + '/resultSCYNet/nets/%s' % err
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
     mydate = datetime.datetime.now()
     date = mydate.strftime("%d%b")
-    model.save(directory + '/model_%s_%s.h5' % (err, date))
-    with open(directory + '/model_%s_%s.txt' % (err, date),'a') as f:
-        if hp != None:
+    
+    directory = os.environ['HOME'] + '/resultSCYNet/nets/%s_%s' % (err, date)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    model.save(directory + '/%s_%s.h5' % (err, date))
+    with open(directory + '/%s_%s.txt' % (err, date),'a') as f:
+        if hp != None:#if you give a hp, we write the whole thing to file
             f.write(result_string(hp, x.back_info, y, 12345))
-        else:
+        else:#here only information on back_trafo's
             f.write(str(x.back_info)+'\n')
             f.write(str(y.back_info)+'\n')
 
-def result_string_to_dict(line,verbose=True):
+def result_string_to_dict(line,verbose=False):
     hp = {}
     L = line.split(';')
     for l in L:

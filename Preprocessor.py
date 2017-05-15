@@ -95,8 +95,8 @@ class chi2:
         self.chi2 = data
         self.split = int(split*len(self.chi2))
         self.start = deepcopy(self.chi2[:50])
-        self.back = [] #save which backtransformations are to be applied later
-        self.back_info = {} #numerical info of backtrafos
+        self.back = [] #save which backtransformations are to be applied later. training only
+        self.back_info = {}#not needed during training. but for SCYNet.
         self.preprocess() 
 
     def split_train_data(self):
@@ -105,12 +105,13 @@ class chi2:
  
     '''divide chi2 by maximum'''
     def div_max(self):
-        self.maxi = max(self.chi2)
-        self.chi2 /= self.maxi
-        self.back.append('mult_max')
-        self.back_info.update({'maxi':self.maxi})
+        print 'i should not be here'
+        self.maximum = max(self.chi2)
+        self.chi2 /= self.maximum
+        self.back.append('mult_max')#training + SCYNet
+        self.back_info.update({'maximum':self.maximum})#used only for SCYNet
     def mult_max(self, chi2):
-        return self.maxi * chi2
+        return self.maximum * chi2
 
     '''substract mean and divide by std'''
     def sub_mean_div_std(self):
@@ -145,6 +146,7 @@ class chi2:
         y[y > (cut + delta)] = cut
         self.chi2 = y   
         self.back.append('back_square')
+        self.back_info.update({'cut':cut, 'delta':delta})
     def back_square(self, chi2):
         cut, delta = self.params
         self.cut = cut
@@ -161,6 +163,7 @@ class chi2:
         self.cut = self.params[0]
         self.train_init = deepcopy(self.chi2)[:self.split].flatten()
         self.train_init[self.train_init > self.cut] = self.cut
+
         self.test_init= deepcopy(self.chi2)[self.split:].flatten()
         self.test_init[self.test_init > self.cut] = self.cut
 
@@ -239,6 +242,7 @@ def log_norm(data, logis):
 def div_max(data, maxis):
     for i in range(data.shape[1]):
         data[:,i] /= maxis[i]
+    return data
 def min_max(data, minmaxis):
     for i in range(data.shape[1]):
         mini, maxi = minmaxis[i]
@@ -246,24 +250,24 @@ def min_max(data, minmaxis):
     return data
 
 
-''' 
-y = chi2(['square_cut','div_max'], [100,25], split=7.0/8)
+if __name__ == '__main__': 
+    y = chi2(['square_cut','div_max'], [100,25], split=7.0/8)
 
-back = y.backtrafo(y.train)
-print y.start
+    back = y.backtrafo(y.train)
+    print y.start
 
-for a,b,c in zip(y.train[:50], y.train_init[:50], back[:50]):
-    print b,c,c==b#==c
-#x=pmssm(preproc = ['log_norm','min_max'], split = 7.0/8)
-#y=pmssm(preproc = ['sub_mean_div_std','min_max'], split = 7.0/8)
+    for a,b,c in zip(y.train[:50], y.train_init[:50], back[:50]):
+        print b,c,c==b#==c
+    #x=pmssm(preproc = ['log_norm','min_max'], split = 7.0/8)
+    #y=pmssm(preproc = ['sub_mean_div_std','min_max'], split = 7.0/8)
 
-#import matplotlib
-#matplotlib.use("GTKAgg")
-#import matplotlib.pyplot as plt
+    #import matplotlib
+    #matplotlib.use("GTKAgg")
+    #import matplotlib.pyplot as plt
 
-#print x.x[:,0]
-#print y.x[:,0]
+    #print x.x[:,0]
+    #print y.x[:,0]
 
-#plt.hist(y.x[:,0], bins=100)
-#plt.show()
-'''
+    #plt.hist(y.x[:,0], bins=100)
+    #plt.show()
+    

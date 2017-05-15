@@ -14,27 +14,28 @@ import numpy as np
 import time
 
 
-#Keras
+#ML, numpy
 from keras.callbacks import History, ModelCheckpoint, EarlyStopping
 import keras.backend as K
+import numpy as np
 
 #own scripts
 import misc
 from netbuilder import build_Sequential_RH, build_Optimizer_RH
-from hyperparameter import RandomHyperPar
+from hyperparameter import HyperPar
 from Preprocessor import pmssm, chi2, fulldata
 
 ####################
 #config the hp scan#
 ####################
-N = 200#int(sys.argv[1])
+N = 100#int(sys.argv[1])
 split = 0.9
 initial_patience = 65
 patience_dec = 0.5#decreases patience . patience -> initial_patience / (lr_epoch)**patience_dec
 lr_divisor = 4.0 #we divide each lr epoch by this number
 resultfolder = os.environ['HOME']+'/resultSCYNet'
 bestnet = resultfolder + '/temp/%s%s_best.h5' % (time.time(), net_name) #instance of this script has a unique temporary best net
-result_txt = resultfolder + '/result_initpat_%s_patdec_%s_lrdec_%s_spl_%s' % \
+result_txt = resultfolder + '/result_initpat_%s_lrdec_%s_patdec_%s_spl_%s' % \
             (initial_patience, lr_divisor, patience_dec, split)
 if not os.path.isfile(result_txt):
     try:
@@ -56,7 +57,7 @@ try:
         histos = []
         timecheck_occured = False
         stopped = False
-        hp = RandomHyperPar(fasttrain=False)
+        hp = HyperPar(mode='random')
         print '\nhyperparameter number %s' % i
         print hp
         #build model according to hp
@@ -69,15 +70,15 @@ try:
         data = fulldata()
         data.shuffle()
         x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
-        y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split,verbose=False)
+        y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [hp.cut, hp.delta], split = split,verbose=False)
 
         modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=0, save_best_only=True, mode='min')
 
         start_time = time.time()
         lr=hp.lr
-        lr_epoch = 0
+        lr_epoch = 0#after decreasing the learning rate, increase this by 1 
         epoch = 0
-        best = 100
+        best = np.inf #best val loss of training
         best_in_lr_epoch = []
         while ((lr_epoch <= 10) and not stopped):
             print '\n\nLEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
@@ -117,7 +118,7 @@ try:
                 #early stopping, check if we hit plateau for val_loss
                 if current < best:
                     if current > 0.99 * best:
-                        patience = max(2, patience - 1)
+                        patience = max(2, patience - 1 - lr_epoch)
                     best = current
                     wait = 0
                 else:

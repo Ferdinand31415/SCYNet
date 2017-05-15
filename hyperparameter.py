@@ -10,7 +10,7 @@ except:
     import pickle
 
 
-class Hyperparameter():
+class Hyperparameter_GridSearch():
     
     def __init__(self, paramfile='paramfile.pkl', verbose=True):
         self.paramfile = paramfile
@@ -147,89 +147,92 @@ class Hyperparameter():
         print '\n'
 
 from random import uniform, randint
-class RandomHyperPar():
-    def __init__(self, fasttrain=False):
-        self.lr = 10**(-uniform(2.5,3.8))
-        self.dropout = 10**(-uniform(2.0,1.0))#0.45
-        self.batch = randint(500,2500)
-        self.layers = randint(2,6)
+class HyperPar():
+    def __init__(self, testing=False, mode='random', hpar=None):
+        if mode == 'random':
+            self.lr = 10**(-uniform(2.5,3.8))
+            self.dropout = 10**(-uniform(2.0,1.0))#0.45
+            self.batch = randint(500,2500)
+            self.layers = randint(2,6)
 
-        neurons_low, neurons_high = 150, 400
-        if self.layers == 2:
-            self.neurons = 2*[randint(neurons_low, neurons_high)]
-        else:
-            if randint(0,10) < 6:
-               #block architecture
-               self.neurons = self.layers*[randint(neurons_low, neurons_high)]
+            neurons_low, neurons_high = 150, 400
+            if self.layers == 2:
+                self.neurons = 2*[randint(neurons_low, neurons_high)]
             else:
-                #getting bigger and smaller!
-                switch = randint(2,self.layers-1)
-                self.neurons = self.layers*[0]
-                self.neurons[0] = randint(neurons_low, int(neurons_high/2))
-                for i in range(1,switch):
-                    self.neurons[i] = int(min(neurons_high,uniform(1.1,1.5)*self.neurons[i-1]))
-                for i in range(switch, self.layers):
-                    self.neurons[i] = int(max(neurons_low,self.neurons[i-1]/uniform(1.1,1.5)))
-        if fasttrain:
-            self.layers = randint(2,3)
-            self.neurons = self.layers*[randint(20,80)]
-            #____
-        
-        #probability for choosing different types
-        #of preprocessing for the pmssm
-
-        p = randint(0,6)
-        if p == 0:
-            self.pp_pmssm = ['log_norm','sub_mean_div_std']
-        elif p == 1:
-            self.pp_pmssm = ['log_norm','min_max']
-        elif p == 2:
-            self.pp_pmssm = ['log_norm','div_max']
-        elif p == 3:
-            self.pp_pmssm = ['min_max']
-        elif p == 4:
-            self.pp_pmssm = ['sub_mean_div_std','div_max']
-        elif p == 5:
-            self.pp_pmssm = ['sub_mean_div_std','min_max']
-        elif p == 6:
-            self.pp_pmssm = ['div_max']
+                if randint(0,10) < 6:
+                   #block architecture
+                   self.neurons = self.layers*[randint(neurons_low, neurons_high)]
+                else:
+                    #getting bigger and smaller!
+                    switch = randint(2,self.layers-1)
+                    self.neurons = self.layers*[0]
+                    self.neurons[0] = randint(neurons_low, int(neurons_high/2))
+                    for i in range(1,switch):
+                        self.neurons[i] = int(min(neurons_high,uniform(1.1,1.5)*self.neurons[i-1]))
+                    for i in range(switch, self.layers):
+                        self.neurons[i] = int(max(neurons_low,self.neurons[i-1]/uniform(1.1,1.3)))
+            if testing:
+                self.layers = randint(2,3)
+                self.neurons = self.layers*[randint(20,80)]
+                #____
             
-        p = randint(0,2)
-        #same for chi2 data
-        if p == 0:
-            self.pp_chi2 = ['square_cut','div_max']
-        elif p == 1:
-            self.pp_chi2 = ['square_cut','sub_mean_div_std']
-        elif p == 2:
-            self.pp_chi2 = ['square_cut','min_max']
+            #probability for choosing different types
+            #of preprocessing for the pmssm
 
-        prob = [randint(0,1) for p in range(10)]
+            p = randint(0,6)
+            if p == 0:
+                self.pp_pmssm = ['log_norm','sub_mean_div_std']
+            elif p == 1:
+                self.pp_pmssm = ['log_norm','min_max']
+            elif p == 2:
+                self.pp_pmssm = ['log_norm','div_max']
+            elif p == 3:
+                self.pp_pmssm = ['min_max']
+            elif p == 4:
+                self.pp_pmssm = ['sub_mean_div_std','div_max']
+            elif p == 5:
+                self.pp_pmssm = ['sub_mean_div_std','min_max']
+            elif p == 6:
+                self.pp_pmssm = ['div_max']
+                
+            p = randint(0,2)
+            #same for chi2 data
+            self.cut = 100
+            self.delta = 25
+            if p == 0:
+                self.pp_chi2 = ['square_cut','div_max']
+            elif p == 1:
+                self.pp_chi2 = ['square_cut','sub_mean_div_std']
+            elif p == 2:
+                self.pp_chi2 = ['square_cut','min_max']
 
-        #same for optimizer
-        if randint(0,10) < 0: #have not rly used sgd, so try only few
-            self.opt= 'sgd'
-            self.lr *= 7 #often, the lr is much too small
-        else:    
-            self.opt= 'nadam'
-            #beta_1=0.9, beta_2=0.999 standard values
-            self.beta_1 = uniform(0.5, 0.99)
-            self.beta_2 = uniform(0.99, 0.9999)
+            #same for optimizer
+            if randint(0,10) < 0: #have not rly used sgd, so try only few
+                self.opt= 'sgd'
+                self.lr *= 7 #often, the lr is much too small
+            else:    
+                self.opt= 'nadam'
+                #beta_1=0.9, beta_2=0.999 standard values
+                self.beta_1 = uniform(0.5, 0.99)
+                self.beta_2 = uniform(0.99, 0.9999)
 
 
-        #kernel initializer
-        if randint(0,10) < 6:
-            self.init = 'glorot_uniform'
-        else:
-            self.init = 'normal'
+            #kernel initializer
+            if randint(0,10) < 6:
+                self.init = 'glorot_uniform'
+            else:
+                self.init = 'normal'
 
-        #activation function
-        #tanh never works well... atm only RELU's
-        #try ELU? exponential linear unit
-        if randint(0,10) < 10:
-            self.act = 'LReLU'
-            self.alpha = 10**(-uniform(2, 0.46))
-        else: #this one did not seem so good?
-            self.act = 'PReLU'
+            #activation function
+            #tanh never works well... atm only RELU's
+            #try ELU? exponential linear unit
+            if randint(0,10) < 10:
+                self.act = 'LReLU'
+                self.alpha = 10**(-uniform(2, 0.46))
+            else: #this one did not seem so good?
+                self.act = 'PReLU'
+        elif mode =='set':
+            self.set(hpar)
 
     def __str__(self):
         s = '\nhyperparameter:'
