@@ -63,7 +63,7 @@ def result_string(hp, xback_info, y, initialpatience, earlyquit=False):
     if earlyquit:
         res += 'error?10.0' #so a comparison between the hp's becomes meaningfull.
     else:
-        res += 'error?'+str(y.mean_errors['0.0-100.0'][1])
+        res += 'error?'+str(y.mean_errors['0.0-100.0'][1])+';'
         res += 'fullerror?'+str(y.mean_errors)
     return res + '\n'
 
@@ -85,7 +85,7 @@ def get_global_best(data):
             best = err
     return best
 
-def savemod(model, x, y, hp=None):
+def savemod(model, x, y, hp=None, savedata = True):
     err = y.mean_errors['0.0-100.0'][1]
     err = "{0:.4f}".format(err)
 
@@ -100,9 +100,15 @@ def savemod(model, x, y, hp=None):
     with open(directory + '/%s_%s.txt' % (err, date),'a') as f:
         if hp != None:#if you give a hp, we write the whole thing to file
             f.write(result_string(hp, x.back_info, y, 12345))
-        else:#here only information on back_trafo's
+        else:#here only information on back_trafo's. I never use this mode currently, its old
             f.write(str(x.back_info)+'\n')
             f.write(str(y.back_info)+'\n')
+    if savedata:
+        np.save(x.train, directory + '/x.train')
+        np.save(x.test, directory + '/x.test')
+        np.save(y.train, directory + '/y.train')
+        np.save(y.test, directory + '/y.test')
+
 
 def result_string_to_dict(line,verbose=False):
     hp = {}
@@ -125,6 +131,16 @@ def load_result_file(path):
         data.append(result_string_to_dict(l,verbose=False))
     return data
 
+def preprocess(self,data,hp,verbose=True):
+    '''preprocesses the p11mssm points in exactly the same way done for the net as it was trained'''
+    if verbose:
+        for k,v in zip(hp.keys(), hp.values()):
+            print k,v
+    for func in hp['pp_pmssm']:
+        if verbose: print '\n*****func:',func
+        preproc_info = hp['pmssm_back_info'][func]
+        if verbose: print '\n*****preproc_info', preproc_info
+        pp_data = eval(func)(self.pp_data, preproc_info) #these functions got imported from Preprocessor above
 
 def almost_no_improvement(histos, improvefrac = 0.04):
     '''returns true if almost no improvement at all even though

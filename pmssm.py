@@ -39,21 +39,21 @@ if mode == 'custom':
     split = 9.0/10 #training/validiation split
     use_only = range(11) #use full pmssm set
     learnrate=10**(-3.8)
-    initial_patience = 60
+    initial_patience = 260
 
     data.shuffle()
-    x = pmssm(data.data[:,:-1], preproc = ['div_max'], split = split)
+    x = pmssm(data.data[:,:-1], preproc = ['sub_mean_div_std','div_max'], split = split)
     y = chi2(data.data[:,-1], preproc = ['square_cut','div_max'], params = [100,25], split= split)
 
     model = Sequential()
-    n, act, init = 3500, 'linear', 'glorot_uniform'
+    n, act, init = 2500, 'linear', 'normal'
     alpha=0.300007332516 #for Leaky Relu
     model.add(Dense(n, kernel_initializer=init,
     #		kernel_initializer='zero',
             activation=act,
             input_dim=x.train.shape[1]))
     model.add(LeakyReLU(alpha=alpha))
-    for i in range(3):
+    for i in range(2):
         model.add(Dense(n-0*i, kernel_initializer=init,activation=act))#, W_regularizer=l2(0.001)))
         model.add(Dropout(0.0744391624395))
         model.add(LeakyReLU(alpha=alpha))
@@ -79,26 +79,30 @@ elif mode =='hp':
     data.shuffle()
     split = 0.9
     x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
-    y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [100,25], split = split,verbose=False)
+    y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [hp.cut,hp.delta], split = split,verbose=False)
 
  
 
 lr_epoch = 1
-while learnrate > 10**(-7.1):
+min_learnrate = 10**(-7.1)
+while learnrate > min_learnrate:
     patience = max(2, int(initial_patience/(lr_epoch)**(0.4))) #patience decrease 
     early_stopping = EarlyStopping(monitor='val_loss', patience=patience, mode='min', verbose=1)
     K.set_value(model.optimizer.lr, learnrate)
     try:
         model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1000, batch_size=1000, callbacks=[history,early_stopping,modcp],verbose=1)
     except KeyboardInterrupt:
-        user_input = raw_input('What do you want to do? (q)uit or (r)educe lr')
+        user_input = raw_input('What do you want to do? (q)uit or (r)educe lr\n')
         if user_input == 'q':
             sys.exit()
         else:
             print 'manually reducing learnrate hehehe...'
+            min_learnrate /= 10
     model.load_weights(net)
     learnrate /= 3.5
     lr_epoch += 1
+    y.evaluation(x, model)
+
  
     print 'learnrate:%s, lr_epoch:%s, patience:%s' % (learnrate, lr_epoch, patience)
 

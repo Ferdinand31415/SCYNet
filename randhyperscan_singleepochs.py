@@ -28,7 +28,7 @@ from Preprocessor import pmssm, chi2, fulldata
 ####################
 #config the hp scan#
 ####################
-N = 100#int(sys.argv[1])
+N = 200#int(sys.argv[1])
 split = 0.9
 initial_patience = 65
 patience_dec = 0.5#decreases patience . patience -> initial_patience / (lr_epoch)**patience_dec
@@ -178,7 +178,7 @@ try:
                     print 'WARNING: got nan %s' % value
                     continue
             if y.err < 1.3:
-                misc.savemod(model, x, y, hp)
+                misc.savemod(model, x, y, hp, savedata=True)
         result = misc.result_string(hp, x.back_info, y, initial_patience, earlyquit = stopped)
         misc.append_to_file(result_txt, result)
         #clean up

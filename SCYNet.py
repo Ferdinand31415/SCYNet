@@ -50,12 +50,13 @@ class SCYNet:
         y.back = self.hp['chi2_back_trafos']
         if self.verbose: print 'y.back:',y.back
 
+        #the chi2 class needs accesses the attributes in this way.
         for attribute in self.hp['chi2_back_info']:
             value = self.hp['chi2_back_info'][attribute]
             if self.verbose: print 'setting chi2.%s to %s'%(attribute,value)
             setattr(y, attribute, value)
 
-
+        #actual backtransformation
         self.pred = y.backtrafo(self.pred) #applys functions in backward order
         return self.pred
 

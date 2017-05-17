@@ -95,7 +95,7 @@ class chi2:
         self.chi2 = data
         self.split = int(split*len(self.chi2))
         self.start = deepcopy(self.chi2[:50])
-        self.back = [] #save which backtransformations are to be applied later. training only
+        self.back = [] #training+SCYNet
         self.back_info = {}#not needed during training. but for SCYNet.
         self.preprocess() 
 
