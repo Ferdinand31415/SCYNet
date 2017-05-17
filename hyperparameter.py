@@ -151,7 +151,7 @@ class HyperPar():
     def __init__(self, testing=False, mode='random', hpar=None):
         if mode == 'random':
             self.lr = 10**(-uniform(2.5,3.8))
-            self.dropout = 10**(-uniform(2.0,1.0))#0.45
+            self.dropout = 10**(-uniform(2.0,0.45))#0.45
             self.batch = randint(500,2500)
             self.layers = randint(2,6)
 
