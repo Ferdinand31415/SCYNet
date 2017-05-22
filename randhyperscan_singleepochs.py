@@ -54,9 +54,13 @@ if not os.path.isfile(result_txt):
 ################
 try:
     for i in range(N):
-        histos = []
+        val_loss = [] #just val loss
+        train_loss = [] #just train loss
+        histos = [] #saves all history objects 
         timecheck_occured = False
         stopped = False
+
+        randomseed = np.random.randint(0,65536**2-1)
         hp = HyperPar(mode='random')
         print '\nhyperparameter number %s' % i
         print hp
@@ -68,7 +72,7 @@ try:
 
         #shuffle data, so we dont learn hyperparameters for a certain validation set
         data = fulldata()
-        data.shuffle()
+        data.shuffle(seed=randomseed)
         x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
         y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [hp.cut, hp.delta], split = split,verbose=False)
 
@@ -97,7 +101,8 @@ try:
 
                 histos.append(history)
                 current = hist.history['val_loss'][0]
-
+                val_loss.append(current)
+                train_loss.append(hist.history['loss'][0])
                 #check after first epoch if the loss is too damn high
                 if epoch == 0 and lr_epoch == 1 and current > 0.35:
                     print 'FIRST LOSS IS TOO DAMN HIGH, loss: %s' % current
@@ -109,7 +114,7 @@ try:
                 if current > 0.6 or np.isnan(current) or np.isinf(current):
                     print 'SUDDEN CATASTROPY %s' % current
                     wait_sudden_catastrophic_loss += 1
-                    if wait_sudden_catastrophic_loss > 2:
+                    if wait_sudden_catastrophic_loss > 5:
                         stopped = True
                         break
                     model.load_weights(bestnet)
@@ -178,8 +183,8 @@ try:
                     print 'WARNING: got nan %s' % value
                     continue
             if y.err < 1.3:
-                misc.savemod(model, x, y, hp, savedata=True)
-        result = misc.result_string(hp, x.back_info, y, initial_patience, earlyquit = stopped)
+                misc.savemod(model, x, y, hp, randomseed, initial_patience, split)
+        result = misc.result_string(hp, x.back_info, y, initial_patience, randomseed, split, earlyquit = stopped)
         misc.append_to_file(result_txt, result)
         #clean up
         try:

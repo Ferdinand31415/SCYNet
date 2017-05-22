@@ -116,10 +116,10 @@ if __name__ == '__main__':
     net = path + net + '/' + net
 
     mask = [[int(sys.argv[1]), int(sys.argv[2])]]
-    #raw_data = sys.argv[3]
+    pmssm_data = sys.argv[3]
     SN = SCYNet(masks=mask, model=net+'.h5', hp=net+'.txt')
-    #SN.read_data(raw_data)
+    SN.read_data(pmssm_data)
     #SN.read_data('/net/home/lxtsfs1/tpe/feiteneuer/13TeV_chi2_disjoint_2_test') #for testing
-    SN.read_data('/home/fe918130/13TeV_chi2_disjoint_2')
+    #SN.read_data('/home/fe918130/13TeV_chi2_disjoint_2')
     pred = SN.predict()
-    SN.write_output(mode = 'chi2_only')
+    SN.write_output(mode = 'pmssm_only')

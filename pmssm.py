@@ -27,7 +27,7 @@ data = fulldata()
 
 #a = np.random.randint(1,10**15)
 net = './output/pmssm_bestnet.h5'#.%s.hdf5' % a
-print 'saving net temporarily to %s' % net
+print 'will save temporarily best net to %s' % net
 if os.path.isfile(net):
     os.remove(net)
 
@@ -65,8 +65,10 @@ if mode == 'custom':
     #opt = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
     model.compile(loss='mae', optimizer=opt)
 elif mode =='hp':
-    hp_path = sys.argv[2]
-    hp_dict = misc.load_result_file(hp_path)[0]
+    hp_dir = sys.argv[2]
+    hpar = hp_dir +'/'+hp_dir.split('/')[-1]+'.txt'
+    print 'loading', hpar
+    hp_dict = misc.load_result_file(hpar)[0]
     hp = HyperPar(mode='set', hpar=hp_dict)
     print hp
     model = build_Sequential_RH(hp)
@@ -76,11 +78,10 @@ elif mode =='hp':
     learnrate = hp.lr
     #shuffle data, so we dont learn hyperparameters for a certain validation set
     data = fulldata()
-    data.shuffle()
+    data.shuffle(seed=hp_dict['randomseed'])
     split = 0.9
     x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
     y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [hp.cut,hp.delta], split = split,verbose=False)
-
  
 
 lr_epoch = 1
