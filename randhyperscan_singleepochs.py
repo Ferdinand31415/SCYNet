@@ -56,7 +56,12 @@ try:
     for i in range(N):
         val_loss = [] #just val loss
         train_loss = [] #just train loss
-        histos = [] #saves all history objects 
+        histos = [] #saves all history objects
+        
+        times_error = {} #saves timing information when a certain val_loss is reached
+        val_errors_to_check = [0.01,0.02,0.025,0.03,0.035,0.04,0.045,0.05, 0.055, 0.06] #val_losses for times_error
+        
+
         timecheck_occured = False
         stopped = False
 
@@ -87,7 +92,7 @@ try:
         while ((lr_epoch <= 10) and not stopped):
             print '\n\nLEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
             lr_epoch += 1
-            
+
             #learning utility
             patience = max(2, int(initial_patience/(lr_epoch)**(patience_dec))) #patience decrease 
             #No more huge gains expected after we have reduced lr several times. we want to save computation time
@@ -98,6 +103,7 @@ try:
             #wait_sudden_catastrophic_loss: sometimes the algorithm becomes unstable and we get huge losses. reload checkpoint then
             while wait <= patience:
                 hist = model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=0, callbacks=[history,modcp])
+                current_time = time.time() - start_time
 
                 histos.append(history)
                 current = hist.history['val_loss'][0]
@@ -109,6 +115,14 @@ try:
                     stopped = True
                     N -= 1
                     break
+
+                #save information on how long it takes to improve to a certain loss.
+                #maybe later use this information, to stop training early
+
+                for j in range(len(val_errors_to_check)):
+                    check = val_errors_to_check[j]
+                    if current < check and check not in times_error.keys(): 
+                        times_error.update({check:current_time})
 
                 #check if optimizer goes berserk
                 if current > 0.6 or np.isnan(current) or np.isinf(current):
@@ -183,8 +197,8 @@ try:
                     print 'WARNING: got nan %s' % value
                     continue
             if y.err < 1.3:
-                misc.savemod(model, x, y, hp, randomseed, initial_patience, split)
-        result = misc.result_string(hp, x.back_info, y, initial_patience, randomseed, split, earlyquit = stopped)
+                misc.savemod(model, x, y, hp, randomseed, initial_patience, split, times_error)
+        result = misc.result_string(hp, x.back_info, y, initial_patience, randomseed, split, times_error, earlyquit = stopped)
         misc.append_to_file(result_txt, result)
         #clean up
         try:
