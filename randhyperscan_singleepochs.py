@@ -28,7 +28,7 @@ from Preprocessor import pmssm, chi2, fulldata
 ####################
 #config the hp scan#
 ####################
-N = 200#int(sys.argv[1])
+N = 1#int(sys.argv[1])
 split = 0.9
 initial_patience = 65
 patience_dec = 0.5#decreases patience . patience -> initial_patience / (lr_epoch)**patience_dec
@@ -54,9 +54,18 @@ if not os.path.isfile(result_txt):
 ################
 try:
     for i in range(N):
-        histos = []
+        val_loss = [] #just val loss
+        train_loss = [] #just train loss
+        histos = [] #saves all history objects
+        
+        times_error = {} #saves timing information when a certain val_loss is reached
+        val_errors_to_check = [0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.055,0.06,0.065,0.07] #val_losses for times_error
+        
+
         timecheck_occured = False
         stopped = False
+
+        randomseed = np.random.randint(0,65536**2-1)
         hp = HyperPar(mode='random')
         print '\nhyperparameter number %s' % i
         print hp
@@ -68,7 +77,7 @@ try:
 
         #shuffle data, so we dont learn hyperparameters for a certain validation set
         data = fulldata()
-        data.shuffle()
+        data.shuffle(seed=randomseed)
         x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
         y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [hp.cut, hp.delta], split = split,verbose=False)
 
@@ -83,7 +92,7 @@ try:
         while ((lr_epoch <= 10) and not stopped):
             print '\n\nLEARNING RATE: %s, adjusted lr %s times' % (lr,lr_epoch)#, K.get_value(model.optimizer.lr), model.optimizer.get_config()['lr'], '\n\n'
             lr_epoch += 1
-            
+
             #learning utility
             patience = max(2, int(initial_patience/(lr_epoch)**(patience_dec))) #patience decrease 
             #No more huge gains expected after we have reduced lr several times. we want to save computation time
@@ -94,10 +103,12 @@ try:
             #wait_sudden_catastrophic_loss: sometimes the algorithm becomes unstable and we get huge losses. reload checkpoint then
             while wait <= patience:
                 hist = model.fit(x.train, y.train, validation_data=(x.test,y.test), epochs=1, batch_size=hp.batch, verbose=0, callbacks=[history,modcp])
+                current_time = time.time() - start_time
 
                 histos.append(history)
                 current = hist.history['val_loss'][0]
-
+                val_loss.append(current)
+                train_loss.append(hist.history['loss'][0])
                 #check after first epoch if the loss is too damn high
                 if epoch == 0 and lr_epoch == 1 and current > 0.35:
                     print 'FIRST LOSS IS TOO DAMN HIGH, loss: %s' % current
@@ -105,11 +116,18 @@ try:
                     N -= 1
                     break
 
+                #save information on how long it takes to improve to a certain loss.
+                #maybe later use this information, to stop training early
+                for j in range(len(val_errors_to_check)):
+                    check = val_errors_to_check[j]
+                    if current < check and check not in times_error.keys(): 
+                        times_error.update({check:current_time})
+
                 #check if optimizer goes berserk
                 if current > 0.6 or np.isnan(current) or np.isinf(current):
                     print 'SUDDEN CATASTROPY %s' % current
                     wait_sudden_catastrophic_loss += 1
-                    if wait_sudden_catastrophic_loss > 2:
+                    if wait_sudden_catastrophic_loss > 5:
                         stopped = True
                         break
                     model.load_weights(bestnet)
@@ -178,8 +196,8 @@ try:
                     print 'WARNING: got nan %s' % value
                     continue
             if y.err < 1.3:
-                misc.savemod(model, x, y, hp, savedata=True)
-        result = misc.result_string(hp, x.back_info, y, initial_patience, earlyquit = stopped)
+                misc.savemod(model, x, y, hp, randomseed, initial_patience, split, times_error)
+        result = misc.result_string(hp, x.back_info, y, initial_patience, randomseed, split, times_error, earlyquit = stopped)
         misc.append_to_file(result_txt, result)
         #clean up
         try:

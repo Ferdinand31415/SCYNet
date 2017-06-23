@@ -53,13 +53,16 @@ def quit_early(histos):
     return almost_no_improvement(histos)\
         or bad_loss_anywhere(histos)
 
-def result_string(hp, xback_info, y, initialpatience, earlyquit=False):
+def result_string(hp, xback_info, y, initialpatience, randomseed, split, times_error, earlyquit=False):
     '''save this to a txt file. its the result of the hyperrandomscan'''
     res = hp.string()
     res += 'initialpatience?'+str(initialpatience)+';'#irrelevant
     res += 'chi2_back_info?'+str(y.back_info)+';'#parameters of the back_trafos
     res += 'chi2_back_trafos?'+str(y.back)+';'#what functions to apply to prediction?
-    res += 'pmssm_back_info?'+str(xback_info)+';'#apply 
+    res += 'pmssm_back_info?'+str(xback_info)+';'#apply
+    res += 'randomseed?'+str(randomseed)+';'
+    res += 'split?'+str(split)+';'
+    res += 'times?'+str(times_error)+';'
     if earlyquit:
         res += 'error?10.0' #so a comparison between the hp's becomes meaningfull.
     else:
@@ -85,7 +88,7 @@ def get_global_best(data):
             best = err
     return best
 
-def savemod(model, x, y, hp=None, savedata = True):
+def savemod(model, x, y, hp, randomseed, initial_patience, split, times_error):
     err = y.mean_errors['0.0-100.0'][1]
     err = "{0:.4f}".format(err)
 
@@ -98,17 +101,7 @@ def savemod(model, x, y, hp=None, savedata = True):
 
     model.save(directory + '/%s_%s.h5' % (err, date))
     with open(directory + '/%s_%s.txt' % (err, date),'a') as f:
-        if hp != None:#if you give a hp, we write the whole thing to file
-            f.write(result_string(hp, x.back_info, y, 12345))
-        else:#here only information on back_trafo's. I never use this mode currently, its old
-            f.write(str(x.back_info)+'\n')
-            f.write(str(y.back_info)+'\n')
-    if savedata:
-        np.save(x.train, directory + '/x.train')
-        np.save(x.test, directory + '/x.test')
-        np.save(y.train, directory + '/y.train')
-        np.save(y.test, directory + '/y.test')
-
+        f.write(result_string(hp, x.back_info, y, initial_patience, randomseed, split, times_error))
 
 def result_string_to_dict(line,verbose=False):
     hp = {}
