@@ -4,6 +4,7 @@ from keras.models import model_from_json, load_model
 import misc
 import numpy as np
 import sys
+import time
 
 class SCYNet:
     '''generate a fast chi2 prediction for pmssm points'''
@@ -20,13 +21,21 @@ class SCYNet:
                 self.outputfile = str(args[i+1])
             if args[i] == '-v' or args[i] == '-verbose':
                 self.verbose=True
-
+            if args[i] == '-i' or args[i] == '-include':
+                try:
+                    self.include_additionally = np.load(args[i+1])
+                except:
+                    print 'need valid numpy file, could not load your desired data'
+            if args[i] == '-w' or args[i] == '-write':
+                self.mode = args[i+1]
         if not hasattr(self, 'outputfile'):
             self.outputfile = 'output/SCYNet.out'
         if not hasattr(self, 'masks'):
             self.masks = [[0,100]]
         if not hasattr(self, 'verbose'):
-            self.verbose = True
+            self.verbose = False
+        if not hasattr(self, 'mode'):
+            self.mode = 'all'
         if hasattr(self, 'datapath'):
             self.read_data(self.datapath)
         print 'initialized SCYNet, your options:'
@@ -106,24 +115,24 @@ class SCYNet:
         if self.verbose: print '\tinput data:', inputfile
         self.preprocess()
 
-    def write_output(self, mode='all'):
+    def write_output_old(self, mode='all'):
         '''writes output to file'''
         written = 0
-        if self.verbose: print 'writing output ... mode: %s' % mode
+        if self.verbose: print 'writing output ... mode: %s' % self.mode
         with open(self.outputfile, 'w') as file:
             for m in self.masks:
                 chi_squared = deepcopy(self.pred)
                 mask = (chi_squared >= m[0]) == (chi_squared <= m[1])
                 chi_squared = chi_squared[mask]
                 
-                if mode == 'chi2_only':
+                if self.mode == 'chi2_only':
                     for i in range(len(chi_squared)):
                         file.write(str(chi_squared[i]) + '\n')
-                elif mode == 'all':
+                elif self.mode == 'all':
                     for i in range(len(chi_squared)):
                         line=' '.join(map(str, self.data[mask][i]))+' '+str(chi_squared[i])+'\n'
                         file.write(line)
-                elif mode == 'pmssm_only':
+                elif self.mode == 'pmssm_only':
                     for i in range(len(chi_squared)):
                         line=' '.join(map(str, self.data[mask][i]))+'\n'
                         file.write(line)
@@ -132,8 +141,69 @@ class SCYNet:
                 if self.verbose: print 'points in %s: %s' % (m, len(chi_squared))
                 written +=len(chi_squared)
 
-         if self.verbose: print 'wrote %s lines to %s' % (written, self.outputfile)
-     
+        if self.verbose: print 'wrote %s lines to %s' % (written, self.outputfile)
+
+    def write_output(self,mode='all'):
+        '''writes output to file
+        '''
+        if self.verbose: print 'writing output ... mode: %s' % self.mode
+        output = ''
+        written = 0
+        self.masks_ = []
+        self.total_mask = np.zeros(len(self.pred))
+        for m in self.masks:
+            chi_squared = deepcopy(self.pred)
+            mask = (chi_squared >= m[0]) == (chi_squared < m[1])
+            chi_squared = chi_squared[mask]
+            self.total_mask += mask.astype(int)
+            self.masks_.append([mask,chi_squared])
+            print 'sum', sum(mask.astype(int))
+            if self.mode == 'chi2_only':
+                for i in range(len(chi_squared)):
+                    output += str(chi_squared[i]) + '\n'
+            elif self.mode == 'all':
+                for i in range(len(chi_squared)):
+                    line=' '.join(map(str, self.data[mask][i]))+' '+str(chi_squared[i])+'\n'
+                    output += line
+            elif self.mode == 'pmssm_only':
+                for i in range(len(chi_squared)):
+                    line=' '.join(map(str, self.data[mask][i]))+'\n'
+                    output += line
+            else:
+                raise IOError('wrong mode, can only have "chi2_only","pmssm_only", or "all"')
+            written += len(chi_squared)
+            if self.verbose: print 'will write %s lines in mask %s' % (len(chi_squared), m)
+        
+        with open(self.outputfile, 'w') as file:
+            file.write(output)
+            if self.verbose: print 'wrote %s lines' % written
+            if hasattr(self, 'include_additionally'):
+                if self.verbose: print 'writing additional output according to given numpy array'
+                #example for weird formula below
+                #total mask= [1,1,1,0,0]
+                #incl addit= [0,0,1,1,0]
+                #-> add mask=[0,0,0,1,0]
+                self.include_additionally=self.include_additionally.astype(int)
+                additional_mask = (self.include_additionally - self.total_mask + 1 ) / 2
+                additional_mask = additional_mask.astype(bool)
+                output=''
+                chi_squared = self.pred[additional_mask]
+                data = self.data[additional_mask]
+                if self.mode == 'chi2_only':
+                    for i in range(len(chi_squared)):
+                        output += str(chi_squared[i]) + '\n'
+                elif self.mode == 'all':
+                    for i in range(len(chi_squared)):
+                        line=' '.join(map(str, data[i]))+' '+str(chi_squared[i])+'\n'
+                        output += line
+                elif self.mode == 'pmssm_only':
+                    for i in range(len(chi_squared)):
+                        line=' '.join(map(str, self.data[i]))+'\n'
+                        output += line
+                else:
+                    raise IOError('wrong mode, can only have "chi2_only","pmssm_only", or "all"')
+                file.write(output)
+                if self.verbose: print 'wrote %s more lines from additional input' % len(chi_squared)
     def needfunctionthatgivesonlythosepmssmpointswhicharestillneeded(self):
         pass          
 
@@ -145,4 +215,6 @@ if __name__ == '__main__':
 
     SN = SCYNet(args=sys.argv, model=net+'.h5', hp=net+'.txt')
     pred = SN.predict()
-    SN.write_output(mode = 'pmssm_only')
+
+    include = np.load('/home/fe918130/data/acceptMRT_23_06.npy')
+    SN.write_output(mode = 'all')

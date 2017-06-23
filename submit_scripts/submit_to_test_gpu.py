@@ -1,9 +1,12 @@
 import subprocess as sp
-import time, sys
+import time, sys, os
+from unipath import Path
 
 class GPU_MASTER():
     def __init__(self):
         self.start_time = time.time()
+        self.basic_path = str(Path(os.getcwd()).parent)
+        print 'basic_path',self.basic_path
 
     def print_time(self):
         '''prints time passed since start'''
@@ -34,11 +37,11 @@ class GPU_MASTER():
             print i
 
     def run_testgpu(self):
-        cmd = 'python ../randhyperscan_singleepochs.py'
-        info = sp.Popen(cmd,shell=True,stdout=sp.PIPE)
+        cmd = 'python randomhyperscan.py'
+        info = sp.Popen(cmd,shell=True,stdout=sp.PIPE,cwd = self.basic_path)
         res = info.communicate()
         
-        print '\n\nreturncode randhyperscan_singleepochs.py %s'%info.returncode
+        print '\n\nreturncode randomhyperscan.py %s'%info.returncode
         for i in res[0].split('\n'):
             print i
 
