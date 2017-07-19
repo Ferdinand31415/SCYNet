@@ -36,8 +36,8 @@ class GPU_MASTER():
         for i in self.result:
             print i
 
-    def run_testgpu(self):
-        cmd = 'python randomhyperscan.py'
+    def run_testgpu(self,arg):
+        cmd = 'python randhyperscan_singleepochs.py %s' % arg
         info = sp.Popen(cmd,shell=True,stdout=sp.PIPE,cwd = self.basic_path)
         res = info.communicate()
         
@@ -48,6 +48,7 @@ class GPU_MASTER():
         return info.returncode
 
 if __name__ == '__main__':
+    N = 200
     gpu = GPU_MASTER()
     i = 0
     while i < 10:
@@ -56,7 +57,7 @@ if __name__ == '__main__':
         gpu.print_time()
         gpu.get_info()
         if gpu.gpu_free():
-            exit_code = gpu.run_testgpu()
+            exit_code = gpu.run_testgpu(N)
             if exit_code != 0:
                 sys.exit('??')
 
