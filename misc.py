@@ -95,7 +95,7 @@ def savemod(model, x, y, hp, randomseed, initial_patience, split, times_error):
     mydate = datetime.datetime.now()
     date = mydate.strftime("%d%b")
     
-    directory = os.environ['HOME'] + '/resultSCYNet/nets/%s_%s' % (err, date)
+    directory = os.environ['HOME'] + '/resultSCYNet/nets_24_07/%s_%s' % (err, date)
     if not os.path.exists(directory):
         os.makedirs(directory)
 

@@ -3,7 +3,7 @@ import sys
 
 path = sys.argv[1]
 x=np.load(path)
-print 'data shape:', x.shape
+print '\ndata shape:', x.shape
 
 delidx=[]
 for i,e in enumerate(x):

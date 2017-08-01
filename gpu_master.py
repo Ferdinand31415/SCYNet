@@ -3,7 +3,8 @@ import time, sys, os
 from unipath import Path
 
 class GPU_MASTER():
-    def __init__(self):
+    def __init__(self,verbose=False):
+        self.verbose = verbose
         self.start_time = time.time()
         self.basic_path = str(Path(os.getcwd()).parent)
         print 'basic_path',self.basic_path
@@ -18,20 +19,26 @@ class GPU_MASTER():
         t = t % 3600
         print '\ncurrent duration: %sd %sh %smin-%ss\n' % (d, h, t/60, t%60)
     
-    def get_info(self, cmd='nvidia-smi',verbose=True):
+    def get_info(self, cmd='nvidia-smi'):
         info= sp.Popen(cmd,stdout=sp.PIPE,shell=True)
         self.result = info.communicate()[0].split('\n')
         self.success = not bool(info.returncode)
-        if verbose:
+        if self.verbose:
             self.print_info()
 
-    def gpu_free(self,verbose=True):
+    def check_gpu_free(self):
         if self.success:
             for line in self.result:
                 if 'No running processes found' in line:
                     return True
-            return False
+                if 'C   python' in line:#thats me... Im not blocking myself
+                    return True
+        return False
 
+    def gpu_free(self):
+        self.get_info()
+        return self.check_gpu_free()
+ 
     def print_info(self):
         for i in self.result:
             print i
@@ -50,20 +57,4 @@ class GPU_MASTER():
         return info.returncode
 
 if __name__ == '__main__':
-    N = 1
-    gpu = GPU_MASTER()
-    i = 0
-    while i < 1:
-        i += 1
-        print '\n%s\nITERATION %s\n' % (50*'_', i)
-        gpu.print_time()
-        gpu.get_info()
-        if gpu.gpu_free():
-            exit_code = gpu.run_testgpu(N)
-            if exit_code != 0:
-                sys.exit('??')
-
-        wait = 5*60
-        print '\nsleeping %s secs..' % wait
-        time.sleep(wait)
-    
+    pass

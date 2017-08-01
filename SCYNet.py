@@ -146,6 +146,7 @@ class SCYNet:
     def write_output(self,mode='all'):
         '''writes output to file
         '''
+        self.mode = mode
         if self.verbose: print 'writing output ... mode: %s' % self.mode
         output = ''
         written = 0
@@ -157,7 +158,7 @@ class SCYNet:
             chi_squared = chi_squared[mask]
             self.total_mask += mask.astype(int)
             self.masks_.append([mask,chi_squared])
-            print 'sum', sum(mask.astype(int))
+            print 'points in this chi2 range:', sum(mask.astype(int))
             if self.mode == 'chi2_only':
                 for i in range(len(chi_squared)):
                     output += str(chi_squared[i]) + '\n'
@@ -209,12 +210,12 @@ class SCYNet:
 
 if __name__ == '__main__':
     #chosing SCYNet
-    path = '/home/fe918130/resultSCYNet/nets/'
+    path = '/home/fe918130/resultSCYNet/old_nets/'
     net = '1.3728_15May'
     net = path + net + '/' + net
 
     SN = SCYNet(args=sys.argv, model=net+'.h5', hp=net+'.txt')
     pred = SN.predict()
 
-    include = np.load('/home/fe918130/data/acceptMRT_23_06.npy')
-    SN.write_output(mode = 'all')
+    include = np.load('/home/fe918130/data/acceptMRT_14_07.npy')
+    SN.write_output(mode = 'pmssm_only')

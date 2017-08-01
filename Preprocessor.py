@@ -10,17 +10,26 @@ def shuffle_data(x, y):
     y.split_train_data() #new test split
 
 class fulldata:
-    def __init__(self, path = os.environ['HOME'] + '/13TeV_chi2_disjoint_2'):
+    check = False
+    def __init__(self, path = os.environ['HOME'] + '/13TeV_chi2_disjoint_2.npy',use=range(0,12)):
         self.path = path
-        #self.data = np.genfromtxt(self.path)[:,1:]
-        self.data = np.load(self.path+'.npy')
+        #self.data = np.genfromtxt(self.path[:-4])[:,1:]
+        self.data = np.load(self.path)[:,use]
         #print 'loaded pmssm11 data with shape', self.data.shape
+        if self.check==True:
+            self.quality_ensurance()
 
     def shuffle(self,seed=None):
         if seed != None:
             np.random.seed(seed)
         np.random.shuffle(self.data)
-    
+    def quality_ensurance(self):
+        print 'checking if a "nan" is in the data....'
+        if np.isnan(sum(sum(self.data))):
+            raise ValueError('found a "nan" in the input data')
+        else:
+            self.check = False
+
 class pmssm:
     def __init__(self, data, preproc, split, use_only=range(11)):
         self.use_only = use_only
@@ -79,7 +88,7 @@ class pmssm:
 
     def split_train_data(self):
         '''simple split function'''
-        use_only = self.use_only #never does anything
+        use_only = self.use_only #never does anything. If you want to use only certain pmssm parameters, you may take advantage of this.
         self.train = self.x[:,use_only][:self.split]
         self.test = self.x[:,use_only][self.split:]
 
@@ -194,15 +203,20 @@ class chi2:
 
     def evaluation(self,x,model):
         self.prepare_evaluation(x, model) 
-        ranges = [[0,100.0], [0, 53.5], [53.5, 56.0],\
-                 [56.0, 70.0], [70.0, 95.0], [95.0, 100.0]]
+        ranges = [[0,y.cut], [0, 53.5], [53.5, 56.0],\
+                 [56.0, 70.0], [70.0, 95.0], [95.0, y.cut]]
         l=11
         chi2 =  'chi2              '
         deco =  '                  '+l*len(ranges)*'_'
         train = 'mean error train |'
         test =  'mean error test  |'
+
+        ws =4*' '
+        result_fancy ='chi2        test   train';L=len(result_fancy)
+        result_fancy+='\n' + L*'-'+'\n'
         self.mean_errors = {}
-        for r in ranges:
+        self.nan_error = False #if a value we calculate is 'nan' we set it to True
+        for iter_r,r in enumerate(ranges):
                 if self.verbose: print r
                 mask_train = (self.train_init>r[0]) == (self.train_init<=r[1])
                 mask_test = (self.test_init>r[0]) == (self.test_init<=r[1])
@@ -217,12 +231,61 @@ class chi2:
                 chi2 += chi2_mod + (l-len(chi2_mod))*' '
                 train += train_mod + (l-len(train_mod))*' '
                 test += test_mod +(l-len(test_mod))*' '
+                result_fancy += chi2_mod + (12-len(chi2_mod))*' '+test_mod+'   '+train_mod+'\n'
+                if iter_r == 0: result_fancy += L*'-'+'\n'
+                if np.isnan(err_train) or np.isnan(err_test):
+                    self.nan_error = True
+                    print 'WARNING: got nan: err train:%s ,err test: %s' % (err_train,err_test) 
         self.err = self.mean_errors['0.0-100.0'][1] 
-        print '\n' + chi2
-        print deco
-        print train
-        print test + '\n'
+        #print '\n' + chi2
+        #print deco
+        #print train
+        #print test + '\n'
+        print result_fancy
 
+    def plot_chi2_mean_error(self,y_train_pred, y_test_pred, y_train, y_test,bins=30):
+        bins += 1
+        mini = min(min(y_train),min(y_test))
+        maxi = max(max(y_train),max(y_test))
+        
+        ZS_N, ZS_Area = 8, 5
+        if bins <= ZS_N:
+            print 'make more bins..'
+            return 
+        ZS = np.linspace(mini, mini + ZS_Area, ZS_N + 1)[:-1]
+        RT = np.linspace(mini + ZS_Area, maxi, bins-ZS_N)
+        r = np.concatenate([ZS,RT], axis=0)
+        #print ZS
+        #print RT
+        #print r
+        mean_err_train, mean_err_test = np.zeros(len(r)), np.zeros(len(r))
+        #print mean_err_train.shape, r.shape
+        for i in range(len(r)-1):
+            mask_train = (y_train>r[i]) == (y_train<=r[i+1])
+            mask_test = (y_test>r[i]) == (y_test<=r[i+1])
+            if np.all(mask_train==0) or np.all(mask_test==0):	
+                continue
+            err = np.mean(np.abs(y_train_pred[mask_train]-y_train[mask_train]))
+            mean_err_train[i] = 0 if np.isnan(err) else err
+            err = np.mean(np.abs(y_test_pred[mask_test]-y_test[mask_test]))
+            mean_err_test[i] = 0 if np.isnan(err) else err
+        plt.plot(r, mean_err_train,drawstyle='steps-post',color='red')
+        plt.plot(r, mean_err_test,drawstyle='steps-post',color='green')
+        plt.xlim(mini,maxi) #min,max of r
+        plt.xlabel('chi2')
+        plt.ylabel('mean error')
+        plt.grid()
+        plt.title('mean errors for net')
+        #plt.show()
+        plt.savefig('./output/mean_errors_chi2')
+        plt.gcf().clear()
+
+    def save(self):
+        np.save('./output/y_train_pred',self.train_pred)
+        np.save('./output/y_train_init',self.train_init)
+        np.save('./output/y_test_pred',self.test_pred)
+        np.save('./output/y_test_init',self.test_init)
+ 
 ###############################
 # preprocessing for SCYNet.py #
 ###############################

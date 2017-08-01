@@ -1,59 +1,5 @@
-import subprocess as sp
-import time, sys, os
-from unipath import Path
-
-class GPU_MASTER():
-    def __init__(self):
-        self.start_time = time.time()
-        self.basic_path = str(Path(os.getcwd()).parent)
-        print 'basic_path',self.basic_path
-
-    def print_time(self):
-        '''prints time passed since start'''
-        t = time.time() - self.start_time
-        t = int(t)
-        d = t / 86400
-        t = t % 86400
-        h = t / 3600
-        t = t % 3600
-        print '\ncurrent duration: %sd %sh %smin-%ss\n' % (d, h, t/60, t%60)
-    
-    def get_info(self, cmd='nvidia-smi',verbose=True):
-        info= sp.Popen(cmd,stdout=sp.PIPE,shell=True)
-        self.result = info.communicate()[0].split('\n')
-        self.success = not bool(info.returncode)
-        if verbose:
-            self.print_info()
-
-    def check_gpu_free(self,verbose=True):
-        if self.success:
-            for line in self.result:
-                if 'No running processes found' in line:
-                    return True
-            return False
-
-    def gpu_free(self):
-        self.get_info()
-        return check_gpu_free()
- 
-    def print_info(self):
-        for i in self.result:
-            print i
-
-    def run_testgpu(self,arg):
-        cmd = 'python randhyperscan_singleepochs.py %s' % arg
-        info = sp.Popen(cmd,shell=True,stdout=sp.PIPE,cwd = self.basic_path)
-        res = info.communicate()
-        
-        print '\n\nreturncode randomhyperscan.py %s'%info.returncode
-        for i in res[0].split('\n'):
-            print i
-    
-        print info
-        print res
-        return info.returncode
-
-gpu = GPU_MASTER()
+#general
+import sys, os
 
 if os.environ['LOGNAME'] == 'feiteneuer':#aachen desktop
     stop_time = 3600
@@ -82,16 +28,14 @@ from Preprocessor import pmssm, chi2, fulldata
 ####################
 #config the hp scan#
 ####################
-if len(sys.argv) > 1:
-    N = int(sys.argv[1])
-else:
-    N = 400
+N = 600#int(sys.argv[1])
 split = 0.9
 initial_patience = 65
 patience_dec = 0.5#decreases patience . patience -> initial_patience / (lr_epoch)**patience_dec
 lr_divisor = 4.0 #we divide each lr epoch by this number
 resultfolder = os.environ['HOME']+'/resultSCYNet'
 bestnet = resultfolder + '/temp/%s%s_best.h5' % (time.time(), net_name) #instance of this script has a unique temporary best net
+bestnet_err = 1234 #the current best error gets printed after each hp
 result_txt = resultfolder + '/result_initpat_%s_lrdec_%s_patdec_%s_spl_%s' % \
             (initial_patience, lr_divisor, patience_dec, split)
 if not os.path.isfile(result_txt):
@@ -110,11 +54,7 @@ if not os.path.isfile(result_txt):
 #main hyperloop#
 ################
 try:
-    while True:
-        while not gpu.gpu_free():
-            #wait until its free
-            time.sleep(100)
-
+    for i in range(N):
         val_loss = [] #just val loss
         train_loss = [] #just train loss
         histos = [] #saves all history objects
@@ -136,11 +76,15 @@ try:
         #loss=misc.mae_poisson #if we finally have an error on chi2, use this!
         model.compile(loss='mae', optimizer=opt) #, metrics=[mean_loss_chi2])
 
+        #data = fulldata(path='/home/fe918130/13TeV_chi2_disjoint_2.npy',use=range(0,12))
+        #data = fulldata(path='/home/fe918130/data/pmssm_chi2_iter55_30_06.npy',use=range(0,12))
+        data = fulldata(path='/home/fe918130/data/mod_arrid_pmssm_chi2_55_14Jul.npy',use=range(2,14))
+
         #shuffle data, so we dont learn hyperparameters for a certain validation set
-        data = fulldata()
         data.shuffle(seed=randomseed)
         x = pmssm(data.data[:,:-1], preproc = hp.pp_pmssm, split = split)
         y = chi2(data.data[:,-1], preproc = hp.pp_chi2, params = [hp.cut, hp.delta], split = split,verbose=False)
+        #sys.exit()
 
         modcp = ModelCheckpoint(bestnet, monitor='val_loss', verbose=0, save_best_only=True, mode='min')
 
@@ -171,7 +115,7 @@ try:
                 val_loss.append(current)
                 train_loss.append(hist.history['loss'][0])
                 #check after first epoch if the loss is too damn high
-                if epoch == 0 and lr_epoch == 1 and current > 0.35:
+                if epoch == 0 and lr_epoch == 1 and (current > 0.35 or np.isnan(current)):
                     print 'FIRST LOSS IS TOO DAMN HIGH, loss: %s' % current
                     stopped = True
                     N -= 1
@@ -189,6 +133,7 @@ try:
                     print 'SUDDEN CATASTROPY %s' % current
                     wait_sudden_catastrophic_loss += 1
                     if wait_sudden_catastrophic_loss > 5:
+                        #if we have 5 sudden catastrophies we stop
                         stopped = True
                         break
                     model.load_weights(bestnet)
@@ -196,8 +141,8 @@ try:
                 
                 #early stopping, check if we hit plateau for val_loss
                 if current < best:
-                    if current > 0.99 * best:
-                        patience = max(2, patience - 1 - lr_epoch)
+                    if current > 0.97 * best:#0.99
+                        patience = max(4, patience - 2 - lr_epoch)
                     best = current
                     wait = 0
                 else:
@@ -227,8 +172,13 @@ try:
                 print 'epoch %s, wait %s, lr_epoch %s, patience %s, current %s, best %s' % (epoch, wait, lr_epoch, patience, str(current)[:6], str(best)[:7])
                 epoch += 1
 
-            #prepare for new lr_epoch    
-            model.load_weights(bestnet)
+            #prepare for new lr_epoch
+            if not stopped:
+                #there may not be any net to load if we stopped prematurely
+                model.load_weights(bestnet)
+            else:
+                #stop training if we flagged stopped=True
+                break
             lr /= lr_divisor
             K.set_value(model.optimizer.lr, lr)
             
@@ -252,19 +202,21 @@ try:
             print 'final evaluation'
             model.load_weights(bestnet)
             y.evaluation(x, model) #is needed for getting mean_errs
-            for value in y.mean_errors.values():
-                if np.isnan(value[0]) or np.isnan(value[1]):
-                    print 'WARNING: got nan %s' % value
-                    continue
-            if y.err < 1.3:
+            if y.nan_error:
+                print 'WARNING, nan error occured during evaluation'
+                sys.exit()
+            if y.err < 3.0 and y.nan_error == False:
+                print 'here...'
                 misc.savemod(model, x, y, hp, randomseed, initial_patience, split, times_error)
+            if y.err < bestnet_err: bestnet_err = y.err
+            print 'current best in this run has error of %s' % bestnet_err
         result = misc.result_string(hp, x.back_info, y, initial_patience, randomseed, split, times_error, earlyquit = stopped)
         misc.append_to_file(result_txt, result)
         #clean up
         try:
             os.remove(bestnet)
         except:
-            print 'ERROR in removing model/bestnet'
+            print 'attempt to remove model/bestnet failed'
             #sys.exit()
         del model
         del x

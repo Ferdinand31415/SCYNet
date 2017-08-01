@@ -150,16 +150,16 @@ from random import uniform, randint
 class HyperPar():
     def __init__(self, testing=False, mode='random', hpar=None):
         if mode == 'random':
-            self.lr = 10**(-uniform(2.5,3.8))
+            self.lr = 10**(-uniform(2.2,3.8))#2.5,3.8
             self.dropout = 10**(-uniform(2.0,0.45))#0.45
             self.batch = randint(500,2500)
-            self.layers = randint(2,6)
+            self.layers = randint(3,6) #2,6
 
-            neurons_low, neurons_high = 150, 400
+            neurons_low, neurons_high = 150,450#150, 400
             if self.layers == 2:
                 self.neurons = 2*[randint(neurons_low, neurons_high)]
             else:
-                if randint(0,10) < 6:
+                if randint(0,10) < 6:#6
                    #block architecture
                    self.neurons = self.layers*[randint(neurons_low, neurons_high)]
                 else:
@@ -198,7 +198,7 @@ class HyperPar():
             p = randint(0,2)
             #same for chi2 data
             self.cut = 100
-            self.delta = 25
+            self.delta = randint(20,30) #25
             if p == 0:
                 self.pp_chi2 = ['square_cut','div_max']
             elif p == 1:
@@ -213,8 +213,8 @@ class HyperPar():
             else:    
                 self.opt= 'nadam'
                 #beta_1=0.9, beta_2=0.999 standard values
-                self.beta_1 = uniform(0.5, 0.99)
-                self.beta_2 = uniform(0.99, 0.9999)
+                self.beta_1 = uniform(0.5,0.99)#(0.5, 0.99)
+                self.beta_2 = uniform(0.9, 0.995)#(0.99, 0.9999)
 
 
             #kernel initializer
@@ -237,8 +237,9 @@ class HyperPar():
     def __str__(self):
         s = '\nhyperparameter:'
         hp = self.__dict__
+        maxLen = min(20,max([len(str(v)) for v in hp.values()]))
         for value, key in zip(hp.values(), hp.keys()):
-            s += '\n\t' + str(key) + '\t' + str(value)
+            s += '\n\t' + str(key) + (maxLen-len(str(key)))*' ' + str(value)
         return s
 
     def string(self):
